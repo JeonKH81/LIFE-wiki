@@ -36,18 +36,60 @@
         "uri": {
           "type": "string",
           "minLength": 1
+        },
+        "redacted": {
+          "const": true
         }
       },
       "required": [
         "id",
-        "account_scope",
-        "message_key",
         "sent_at",
         "captured_at",
         "content_sha256",
         "excerpt"
       ],
-      "additionalProperties": false
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "required": [
+              "redacted"
+            ]
+          },
+          "then": {
+            "properties": {
+              "excerpt": {
+                "const": "[Redacted]"
+              }
+            },
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "account_scope"
+                  ]
+                },
+                {
+                  "required": [
+                    "message_key"
+                  ]
+                },
+                {
+                  "required": [
+                    "uri"
+                  ]
+                }
+              ]
+            }
+          },
+          "else": {
+            "required": [
+              "account_scope",
+              "message_key"
+            ]
+          }
+        }
+      ]
     },
     "event": {
       "type": "object",

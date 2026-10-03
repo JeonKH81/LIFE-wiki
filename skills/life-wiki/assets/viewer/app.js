@@ -2,6 +2,7 @@
 /* Original local viewer: no network, browser storage, or HTML interpretation. */
 const labels = {unknown:"미확인",proposed:"제안",requested:"요청",approved:"승인",implemented:"실행 근거 있음",reported_implemented:"실행 보고",verified_implemented:"독립 확인",active:"현재 카드",retired:"이전 카드",related:"관련 업무",depends_on:"의존 업무",possible_same_work:"같은 업무일 가능성",confirmed:"근거 확인",uncertain:"불확실"};
 function textValue(v) { if (typeof v !== "string") throw new Error("문자열 형식을 확인하세요."); return v; }
+function normalizedText(v) { return v.replace(/\r\n?/g,"\n").normalize("NFC"); }
 function checkWiki(w) {
   const phases=["unknown","proposed","requested","approved","implemented"];
   const id=v=>typeof v==="string"&&/^[a-z][a-z0-9-]{0,79}$/.test(v)&&!/[\r\n]/.test(v);
@@ -22,7 +23,8 @@ function checkWiki(w) {
     for(const e of c.timeline) {
       for(const key of ["id","source_id","source_timestamp","kind","summary","quote","basis"])textValue(e[key]);
       const source=sources.get(e.source_id);
-      if(!id(e.id)||local.has(e.id)||!stamp(e.source_timestamp)||!phases.includes(e.kind)||!["explicit","inferred"].includes(e.basis)||typeof e.verification!=="boolean"||!source||e.source_timestamp!==source.sent_at||!e.quote||!source.excerpt.includes(e.quote))throw new Error("기록과 출처 근거를 확인하세요.");
+      if(!id(e.id)||local.has(e.id)||!stamp(e.source_timestamp)||!phases.includes(e.kind)||!["explicit","inferred"].includes(e.basis)||typeof e.verification!=="boolean"||!source||e.source_timestamp!==source.sent_at||!e.quote||!normalizedText(source.excerpt).includes(normalizedText(e.quote)))throw new Error("기록과 출처 근거를 확인하세요.");
+      if(source.redacted&&(e.quote!=="[Redacted]"||e.summary!=="[Redacted]"||e.kind!=="unknown"||e.basis!=="inferred"||e.verification))throw new Error("삭제된 근거로 결론을 낼 수 없습니다.");
       if(e.verification&&(e.kind!=="implemented"||e.basis!=="explicit"))throw new Error("독립 확인 근거를 확인하세요.");
       if(events.has(e.id)) {const prior=events.get(e.id);if(["source_id","source_timestamp","kind","summary","quote","basis","verification"].some(k=>prior[k]!==e[k]))throw new Error("동일 근거 식별자의 내용이 다릅니다.");}
       local.set(e.id,e);events.set(e.id,e);
@@ -42,13 +44,16 @@ function checkWiki(w) {
     if(!id(r.id)||relationIds.has(r.id)||!ids.has(r.from)||!ids.has(r.to)||r.from===r.to||!["related","depends_on","possible_same_work"].includes(r.type)||!["confirmed","uncertain"].includes(r.certainty)||!r.rationale||!stamp(r.recorded_at)||!Array.isArray(r.evidence_ids)||r.evidence_ids.some(eid=>!evidence.has(eid))||(r.certainty==="confirmed"&&!r.evidence_ids.length)||(r.type==="possible_same_work"&&r.certainty!=="uncertain"))throw new Error("업무 관계를 확인하세요.");
     relationIds.add(r.id);
   }
-  for(const h of w.history)for(const key of ["operation_id","action","recorded_at","reason"])textValue(h[key]);
+  for(const h of w.history) {
+    for(const key of ["operation_id","action","recorded_at","reason"])textValue(h[key]);
+    if(!stamp(h.recorded_at)||!["revise","merge","split","undo","redact"].includes(h.action))throw new Error("변경 이력의 시각과 작업을 확인하세요.");
+  }
   return w;
 }
 function searchable(card, wiki, query) {
   const related=wiki.relations.filter(r=>r.from===card.id||r.to===card.id);
   const values=[card.id,card.title,card.summary,...card.unknowns,...card.timeline.flatMap(e=>[e.summary,e.quote]),...related.flatMap(r=>[r.rationale,r.type,r.certainty])];
-  return values.join(" ").toLocaleLowerCase().includes(query.toLocaleLowerCase());
+  return normalizedText(values.join(" ")).toLocaleLowerCase().includes(normalizedText(query).toLocaleLowerCase());
 }
 function element(tag, value, className) {
   const node=document.createElement(tag);

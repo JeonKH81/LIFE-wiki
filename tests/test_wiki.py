@@ -158,7 +158,8 @@ class WikiTests(unittest.TestCase):
         updated["cards"][0]["summary"] = "Outside helper edit"
         with self.assertRaises(wiki.WikiError): wiki.validate(updated)
         updated, _ = wiki.prepare(self.w, self.revised())
-        updated["history"][0]["before"]["cards"][0]["summary"] += " corruption"
+        ref = updated["history"][0]["before"]["cards"][0]
+        updated["history_objects"][ref]["summary"] += " corruption"
         with self.assertRaises(wiki.WikiError): wiki.validate(updated)
 
     def test_revise_cannot_remove_rewrite_or_retire_original_evidence(self):
@@ -173,7 +174,7 @@ class WikiTests(unittest.TestCase):
         self.assertEqual(cards["work-maple"]["replaced_by"], ["work-demonstration-kit"])
         self.assertEqual(len(cards["work-demonstration-kit"]["timeline"]), 6)
         self.assertEqual(updated["relations"], self.w["relations"])
-        self.assertEqual(updated["history"][0]["before"], wiki.state_of(self.w))
+        self.assertEqual(wiki.snapshot_state(updated, updated["history"][0]["before"]), wiki.state_of(self.w))
 
     def test_merge_drops_and_existing_target_rejected(self):
         op = self.merged(); op["replacement"]["timeline"].pop()

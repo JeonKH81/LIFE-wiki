@@ -2,6 +2,7 @@
 """Offline evidence validation, protected transactions, and portable export."""
 import argparse
 import copy
+import ctypes
 import hashlib
 import html
 import json
@@ -11,6 +12,8 @@ import re
 import shutil
 import sys
 import tempfile
+import unicodedata
+from functools import lru_cache
 from datetime import datetime, timezone
 
 from jsonschema import Draft202012Validator, FormatChecker
@@ -45,12 +48,24 @@ def read_json(path):
         raise WikiError("Invalid UTF-8 JSON; check the input locally.") from exc
 
 
-def schema_validate(value, name):
+@lru_cache(maxsize=None)
+def schema_validator(name):
     schemas = [json.loads(p.read_text()) for p in (SKILL_ROOT / "schemas").glob("*.json")]
     registry = Registry().with_resources((s["$id"], Resource.from_contents(s)) for s in schemas)
     schema = next(s for s in schemas if s["$id"].endswith("/" + name + ".schema.json"))
-    errors = list(Draft202012Validator(schema, registry=registry,
-                                     format_checker=FormatChecker()).iter_errors(value))
+    checker = FormatChecker()
+    # Never rely on an optional jsonschema format dependency for timestamps.
+    @checker.checks("date-time", raises=WikiError)
+    def date_time(value):
+        if not isinstance(value, str):
+            return True  # The schema's type check handles this.
+        instant(value)
+        return True
+    return Draft202012Validator(schema, registry=registry, format_checker=checker)
+
+
+def schema_validate(value, name):
+    errors = list(schema_validator(name).iter_errors(value))
     if errors:
         # jsonschema messages can contain raw input: do not echo them.
         raise WikiError(f"{name} schema check failed ({len(errors)} issue(s)); inspect input against schemas.")
@@ -58,12 +73,26 @@ def schema_validate(value, name):
 
 def instant(value):
     try:
-        dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
-        if dt.tzinfo is None:
+        # Strict, portable RFC 3339 subset: reject impossible dates and leap
+        # seconds (datetime cannot represent them); accept lowercase t/z.
+        match = re.fullmatch(r"(\d{4}-\d{2}-\d{2})[Tt](\d{2}:\d{2}:\d{2})(?:\.(\d+))?([Zz]|[+-]\d{2}:\d{2})", value)
+        if match is None:
             raise ValueError
+        day, clock, fraction, zone = match.groups()
+        if zone not in {"Z", "z"} and (int(zone[1:3]) > 23 or int(zone[4:]) > 59):
+            raise ValueError
+        normalized = day + "T" + clock
+        if fraction:
+            normalized += "." + (fraction + "000000")[:6]
+        normalized += "+00:00" if zone in {"Z", "z"} else zone
+        dt = datetime.fromisoformat(normalized)
         return dt.astimezone(timezone.utc)
-    except (ValueError, AttributeError) as exc:
-        raise WikiError("Source timestamps must include a valid timezone.") from exc
+    except (ValueError, TypeError, OverflowError) as exc:
+        raise WikiError("Timestamps need valid RFC 3339 dates and a representable UTC instant; leap seconds are unsupported.") from exc
+
+
+def normalized_text(value):
+    return unicodedata.normalize("NFC", value.replace("\r\n", "\n").replace("\r", "\n"))
 
 
 def normalized_key(value):
@@ -86,7 +115,7 @@ def normalize_inbox(inbox, existing=None):
     retained = {}
     if existing is not None:
         validate(existing)
-        snapshots = [existing] + [s for h in existing["history"] for s in [h["before"], h["after"]]]
+        snapshots = [existing] + list(history_states(existing))
         for state in snapshots:
             for source in state["sources"]:
                 retained[source["id"]] = source
@@ -101,14 +130,18 @@ def normalize_inbox(inbox, existing=None):
         if not key:
             raise WikiError("Message identity is empty after normalization.")
         instant(message["sent_at"])
-        body = message["body"].replace("\r\n", "\n").replace("\r", "\n")
+        body = normalized_text(message["body"])
         sid = source_id(scope, key)
         source = {"id": sid, "account_scope": scope, "message_key": key,
                   "sent_at": message["sent_at"], "captured_at": inbox["captured_at"],
                   "content_sha256": hashlib.sha256(body.encode("utf-8")).hexdigest(), "excerpt": body}
         prior = retained.get(sid)
         if prior is not None:
-            if any(prior[k] != source[k] for k in ["account_scope", "message_key", "sent_at", "content_sha256"]):
+            keys = ["sent_at", "content_sha256"] if prior.get("redacted") else ["account_scope", "message_key", "sent_at", "content_sha256"]
+            legacy_hash = hashlib.sha256(message["body"].replace("\r\n", "\n").replace("\r", "\n").encode("utf-8")).hexdigest()
+            legacy_nfd_hash = hashlib.sha256(unicodedata.normalize("NFD", body).encode("utf-8")).hexdigest()
+            hashes = {source["content_sha256"], legacy_hash, legacy_nfd_hash}
+            if any(prior[k] != source[k] for k in keys if k != "content_sha256") or prior["content_sha256"] not in hashes:
                 raise WikiError("Conflicting existing message identity; no source was overwritten.")
             source = copy.deepcopy(prior)
         if sid in sources and sources[sid] != source:
@@ -120,7 +153,44 @@ def normalize_inbox(inbox, existing=None):
 
 
 def state_of(wiki):
-    return copy.deepcopy({k: v for k, v in wiki.items() if k != "history"})
+    return copy.deepcopy({k: wiki[k] for k in ["schema_version", "revision", "sources", "cards", "relations"]})
+
+
+def snapshot_state(wiki, snapshot):
+    if snapshot.get("encoding") != "sha256-refs":
+        return snapshot
+    objects = wiki.get("history_objects", {})
+    try:
+        return {"schema_version": snapshot["schema_version"], "revision": snapshot["revision"],
+                **{key: [objects[ref] for ref in snapshot[key]] for key in ["sources", "cards", "relations"]}}
+    except KeyError as exc:
+        raise WikiError("History references a missing object.") from exc
+
+
+def history_states(wiki):
+    for entry in wiki["history"]:
+        yield snapshot_state(wiki, entry["before"])
+        yield snapshot_state(wiki, entry["after"])
+
+
+def pack_history(wiki):
+    """Store immutable sources/cards/relations once, with small state manifests."""
+    objects, entries = {}, []
+    for entry in wiki["history"]:
+        packed = {k: copy.deepcopy(v) for k, v in entry.items() if k not in {"before", "after"}}
+        for side in ["before", "after"]:
+            state = snapshot_state(wiki, entry[side])
+            manifest = {"encoding": "sha256-refs", "schema_version": 1, "revision": state["revision"]}
+            for key in ["sources", "cards", "relations"]:
+                manifest[key] = []
+                for item in state[key]:
+                    ref = digest(item)
+                    if ref not in objects:
+                        objects[ref] = copy.deepcopy(item)
+                    manifest[key].append(ref)
+            packed[side] = manifest
+        entries.append(packed)
+    return {**state_of(wiki), "history": entries, "history_format": "content-addressed-v1", "history_objects": objects}
 
 
 def index_unique(items, label):
@@ -137,6 +207,12 @@ def validate_state(state):
     sources = index_unique(state["sources"], "source")
     identities = set()
     for s in sources.values():
+        if s.get("redacted"):
+            if s["excerpt"] != "[Redacted]" or any(k in s for k in ["uri", "account_scope", "message_key"]):
+                raise WikiError("Redacted sources must contain only tombstone metadata.")
+            instant(s["sent_at"])
+            instant(s["captured_at"])
+            continue
         key = normalized_key(s["message_key"])
         if key != s["message_key"] or not key or s["id"] != source_id(s["account_scope"], key):
             raise WikiError("Source ID/normalized identity mismatch.")
@@ -157,8 +233,10 @@ def validate_state(state):
             source = sources.get(e["source_id"])
             if source is None or e["source_timestamp"] != source["sent_at"]:
                 raise WikiError("Evidence references a missing source or a changed source timestamp.")
-            if e["quote"] not in source["excerpt"]:
+            if normalized_text(e["quote"]) not in normalized_text(source["excerpt"]):
                 raise WikiError("Evidence quote must match the retained source excerpt exactly.")
+            if source.get("redacted") and (e["quote"] != "[Redacted]" or e["summary"] != "[Redacted]" or e["kind"] != "unknown" or e["verification"] or e["basis"] != "inferred"):
+                raise WikiError("Redacted evidence cannot retain text or support a conclusion.")
             if e["id"] in events and e != events[e["id"]]:
                 raise WikiError("Evidence ID reused with different contents.")
             events[e["id"]] = e
@@ -215,12 +293,50 @@ def validate_state(state):
 def validate(wiki):
     schema_validate(wiki, "wiki")
     validate_state(wiki)
+    objects = wiki.get("history_objects", {})
+    if objects and wiki.get("history_format") != "content-addressed-v1":
+        raise WikiError("History object storage needs a supported format marker.")
+    for ref, item in objects.items():
+        if digest(item) != ref:
+            raise WikiError("History object checksum mismatch.")
+    used_objects = set()
+    checked_states = set()
+    checked_items = set()
+    audited_redactions = {}
+    for entry in wiki["history"]:
+        if entry["action"] == "redact":
+            audit = entry["redaction"]
+            if set(audit["source_ids"]) != set(audit["original_content_sha256"]):
+                raise WikiError("Redaction audit source identities disagree.")
+            for sid, original_hash in audit["original_content_sha256"].items():
+                if sid in audited_redactions and audited_redactions[sid] != original_hash:
+                    raise WikiError("Redaction audit original source hashes disagree.")
+                audited_redactions[sid] = original_hash
+    def check_state(state):
+        state_hash = digest(state)
+        if state_hash in checked_states:
+            return
+        # Validate each shared object once per validation, not once per revision.
+        for key, schema_ref in [("sources", "provenance.schema.json#/$defs/source"),
+                                ("cards", "card.schema.json"),
+                                ("relations", "relations.schema.json#/$defs/relation")]:
+            for item in state[key]:
+                identity = (key, digest(item))
+                if identity not in checked_items:
+                    validator = schema_validator("wiki").evolve(schema={"$ref": "https://life-wiki.invalid/schemas/" + schema_ref})
+                    if not validator.is_valid(item):
+                        raise WikiError("Historical object schema check failed; inspect input locally.")
+                    checked_items.add(identity)
+        validate_state(state)
+        checked_states.add(state_hash)
     previous = None
     seen = set()
     lifetime_sources, lifetime_events, lifetime_cards = {}, {}, {}
     def remember(state):
         for source in state["sources"]:
             sid = source["id"]
+            if source.get("redacted") and audited_redactions.get(sid) != source["content_sha256"]:
+                raise WikiError("Redacted evidence needs a matching permanent audit record.")
             if sid in lifetime_sources and lifetime_sources[sid] != source:
                 raise WikiError("A source identity conflicts with its historical contents.")
             lifetime_sources[sid] = source
@@ -235,22 +351,32 @@ def validate(wiki):
                     raise WikiError("An evidence identity conflicts with its historical contents.")
                 lifetime_events[eid] = event
     for h in wiki["history"]:
+        instant(h["recorded_at"])
         if h["operation_id"] in seen:
             raise WikiError("Duplicate history operation ID.")
         seen.add(h["operation_id"])
-        if h["before_sha256"] != digest(h["before"]) or h["after_sha256"] != digest(h["after"]):
+        before, after = snapshot_state(wiki, h["before"]), snapshot_state(wiki, h["after"])
+        for side in ["before", "after"]:
+            if h[side].get("encoding") == "sha256-refs":
+                if wiki.get("history_format") != "content-addressed-v1":
+                    raise WikiError("Compact history needs its format marker.")
+                for key in ["sources", "cards", "relations"]:
+                    used_objects.update(h[side][key])
+        if h["before_sha256"] != digest(before) or h["after_sha256"] != digest(after):
             raise WikiError("History snapshot checksum mismatch.")
-        if h["base_revision"] != h["before"]["revision"] or h["result_revision"] != h["after"]["revision"] or h["result_revision"] != h["base_revision"] + 1:
+        if h["base_revision"] != before["revision"] or h["result_revision"] != after["revision"] or h["result_revision"] != h["base_revision"] + 1:
             raise WikiError("History revision transition is invalid.")
         if previous is None and h["base_revision"] != 0:
             raise WikiError("History must start at revision zero.")
-        if previous is not None and h["before"] != previous:
+        if previous is not None and before != previous:
             raise WikiError("History snapshots are not a continuous chain.")
-        validate_state(h["before"])
-        validate_state(h["after"])
-        remember(h["before"])
-        remember(h["after"])
-        previous = h["after"]
+        check_state(before)
+        check_state(after)
+        remember(before)
+        remember(after)
+        previous = after
+    if used_objects != set(objects):
+        raise WikiError("History object store contains unreferenced data.")
     if previous is not None and previous != state_of(wiki):
         raise WikiError("Current state differs from the last protected revision.")
     if previous is None and wiki["revision"] != 0:
@@ -263,9 +389,67 @@ def all_events(cards):
     return {e["id"]: e for c in cards for e in c["timeline"]}
 
 
+def redaction_scope(wiki, source_ids):
+    states = [state_of(wiki)] + list(history_states(wiki))
+    known = {s["id"] for state in states for s in state["sources"]}
+    selected, cards = set(source_ids), set()
+    if not selected or not selected <= known:
+        raise WikiError("Redaction needs existing source IDs; review the scope first.")
+    # Conservative closure: a shared source or historical version may have
+    # copied private text into another event in the same work card.
+    changed = True
+    while changed:
+        old = (len(selected), len(cards))
+        for state in states:
+            for card in state["cards"]:
+                used = {e["source_id"] for e in card["timeline"]}
+                if card["id"] in cards or used & selected:
+                    cards.add(card["id"])
+                    selected.update(used)
+        changed = old != (len(selected), len(cards))
+    return selected, cards
+
+
+def redact_history(wiki, operation):
+    selected, affected_cards = redaction_scope(wiki, operation["source_ids"])
+    def scrub(state):
+        state = copy.deepcopy(state)
+        for source in state["sources"]:
+            if source["id"] in selected:
+                for key in list(source):
+                    if key not in {"id", "sent_at", "captured_at", "content_sha256"}:
+                        del source[key]
+                source.update(excerpt="[Redacted]", redacted=True)
+        for card in state["cards"]:
+            if card["id"] in affected_cards:
+                card.update(title="[Redacted work]", summary="[Redacted]", status="unknown",
+                            unknowns=["Evidence removed by privacy redaction; conclusions require new evidence."],
+                            outcome={"state": "unknown", "evidence_ids": []})
+                for event in card["timeline"]:
+                    event.update(summary="[Redacted]", quote="[Redacted]", kind="unknown", basis="inferred", verification=False)
+        # Free-text relation rationales and operation reasons can repeat mail.
+        for relation in state["relations"]:
+            relation.update(rationale="[Redacted]", certainty="uncertain", evidence_ids=[])
+        return state
+    result = {**scrub(state_of(wiki)), "history": []}
+    for entry in wiki["history"]:
+        sanitized = {k: copy.deepcopy(v) for k, v in entry.items() if k not in {"before", "after"}}
+        for side in ["before", "after"]:
+            sanitized[side] = scrub(snapshot_state(wiki, entry[side]))
+            sanitized[side + "_sha256"] = digest(sanitized[side])
+        sanitized["reason"] = "[Redacted prior operation reason]"
+        result["history"].append(sanitized)
+    sources = {s["id"]: s for state in [wiki] + list(history_states(wiki)) for s in state["sources"]}
+    audit = {"actor": operation["actor"], "source_ids": sorted(selected), "card_ids": sorted(affected_cards),
+             "original_content_sha256": {sid: sources[sid]["content_sha256"] for sid in sorted(selected)},
+             "previous_wiki_sha256": digest(wiki), "reason_sha256": digest(operation["reason"])}
+    return result, audit, affected_cards
+
+
 def prepare(wiki, operation):
     validate(wiki)
     schema_validate(operation, "operation")
+    instant(operation["recorded_at"])
     request_hash = digest(operation)
     for h in wiki["history"]:
         if h["operation_id"] == operation["operation_id"]:
@@ -274,11 +458,14 @@ def prepare(wiki, operation):
             return copy.deepcopy(wiki), False
     if operation["expected_revision"] != wiki["revision"]:
         raise WikiError("Stale revision; re-read and reconcile the current wiki.")
+    action = operation["action"]
+    redaction = None
+    if action == "redact":
+        wiki, redaction, redacted_cards = redact_history(wiki, operation)
     before = state_of(wiki)
     after = copy.deepcopy(before)
     old_cards = index_unique(before["cards"], "card")
-    historical_card_ids = {c["id"] for h in wiki["history"] for state in [h["before"], h["after"]] for c in state["cards"]}
-    action = operation["action"]
+    historical_card_ids = {c["id"] for state in history_states(wiki) for c in state["cards"]}
     if action == "revise":
         after = copy.deepcopy(operation["state"])
         if after["revision"] != wiki["revision"]:
@@ -326,21 +513,32 @@ def prepare(wiki, operation):
                 c["replaced_by"] = new_ids
                 c["revision"] += 1
         after["cards"].extend(replacements)
+    elif action == "redact":
+        for card in after["cards"]:
+            if card["id"] in redacted_cards:
+                card["revision"] += 1
     else:
         if not wiki["history"] or wiki["history"][-1]["operation_id"] != operation["target_operation_id"]:
             raise WikiError("Undo supports only the latest operation; review later changes first.")
-        after = copy.deepcopy(wiki["history"][-1]["before"])
+        if wiki["history"][-1]["action"] == "redact":
+            raise WikiError("Privacy redaction is irreversible; undo cannot restore removed content.")
+        after = copy.deepcopy(snapshot_state(wiki, wiki["history"][-1]["before"]))
         for c in after["cards"]:
             current = old_cards.get(c["id"])
-            prior_revs = [x["revision"] for h in wiki["history"] for state in [h["before"], h["after"]] for x in state["cards"] if x["id"] == c["id"]]
+            prior_revs = [x["revision"] for state in history_states(wiki) for x in state["cards"] if x["id"] == c["id"]]
             c["revision"] = max(prior_revs + [c["revision"], current["revision"] if current else 0]) + 1
     after["revision"] = wiki["revision"] + 1
     result = {**after, "history": copy.deepcopy(wiki["history"])}
+    if "history_objects" in wiki:
+        result.update(history_format=wiki["history_format"], history_objects=wiki["history_objects"])
     result["history"].append({"operation_id": operation["operation_id"], "request_sha256": request_hash,
                               "action": action, "reason": operation["reason"], "recorded_at": operation["recorded_at"],
                               "base_revision": before["revision"], "result_revision": after["revision"],
                               "before": before, "after": after,
                               "before_sha256": digest(before), "after_sha256": digest(after)})
+    if redaction is not None:
+        result["history"][-1].update(redaction=redaction, reason="Privacy redaction requested; free-text reason retained only as SHA-256.")
+    result = pack_history(result)
     validate(result)
     return result, True
 
@@ -416,7 +614,7 @@ def card_markdown(card, wiki):
                 lines += ["  Source locator (inert text): " + m(s["uri"])]
     if card["replaced_by"]:
         lines += ["", "Replaced by: " + ", ".join(f"[{cid}]({cid}.md)" for cid in card["replaced_by"])]
-    relevant = [h for h in wiki["history"] if any(c["id"] == card["id"] for c in h["before"]["cards"] + h["after"]["cards"])]
+    relevant = [h for h in wiki["history"] if any(c["id"] == card["id"] for side in ["before", "after"] for c in snapshot_state(wiki, h[side])["cards"])]
     lines += ["", "## Revision history", "", *[f"- {h['operation_id']} · {h['action']} · {h['recorded_at']} · wiki {h['base_revision']} → {h['result_revision']}: {m(h['reason'])}" for h in relevant]]
     if not relevant:
         lines += ["Initial snapshot (revision zero)."]
@@ -424,25 +622,59 @@ def card_markdown(card, wiki):
     return "\n".join(lines)
 
 
+def rename_new_directory(source, destination):
+    """Atomic publish without replacing even a racing, empty destination."""
+    if sys.platform == "win32":
+        os.rename(source, destination)  # Windows rename never replaces a target.
+        return
+    libc = ctypes.CDLL(None, use_errno=True)
+    if sys.platform == "darwin" and hasattr(libc, "renamex_np"):
+        rename = libc.renamex_np
+        rename.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_uint]
+        rename.restype = ctypes.c_int
+        status = rename(os.fsencode(source), os.fsencode(destination), 4)  # RENAME_EXCL
+    elif sys.platform.startswith("linux") and hasattr(libc, "renameat2"):
+        rename = libc.renameat2
+        rename.argtypes = [ctypes.c_int, ctypes.c_char_p, ctypes.c_int, ctypes.c_char_p, ctypes.c_uint]
+        rename.restype = ctypes.c_int
+        status = rename(-100, os.fsencode(source), -100, os.fsencode(destination), 1)  # AT_FDCWD, RENAME_NOREPLACE
+    else:
+        raise WikiError("Atomic export needs exclusive directory rename support on this platform.")
+    if status:
+        error = ctypes.get_errno()
+        raise OSError(error, os.strerror(error))
+
+
 def render(wiki, destination):
     validate(wiki)
     destination = Path(destination)
     # A fresh directory prevents silent loss of user-edited Markdown.
-    destination.mkdir(mode=0o700, parents=False, exist_ok=False)
-    shutil.copytree(SKILL_ROOT / "assets" / "viewer", destination, dirs_exist_ok=True)
-    destination.chmod(0o700)
-    write_new_json(destination / "wiki.json", wiki)
-    (destination / "cards").mkdir(mode=0o700)
-    for card in wiki["cards"]:
-        path = destination / "cards" / (card["id"] + ".md")
-        path.write_text(card_markdown(card, wiki), encoding="utf-8")
-        path.chmod(0o600)
+    if os.path.lexists(destination):
+        raise FileExistsError("Export destination already exists.")
+    staging = Path(tempfile.mkdtemp(prefix=".life-wiki-export-", dir=destination.parent))
+    try:
+        shutil.copytree(SKILL_ROOT / "assets" / "viewer", staging, dirs_exist_ok=True)
+        staging.chmod(0o700)
+        write_new_json(staging / "wiki.json", wiki)
+        (staging / "cards").mkdir(mode=0o700)
+        for card in wiki["cards"]:
+            path = staging / "cards" / (card["id"] + ".md")
+            path.write_text(card_markdown(card, wiki), encoding="utf-8")
+            path.chmod(0o600)
+        # The final rename is within one parent/filesystem. Recheck after all
+        # writes so a destination created during generation is never replaced.
+        if os.path.lexists(destination):
+            raise FileExistsError("Export destination already exists.")
+        rename_new_directory(staging, destination)
+    finally:
+        if staging.exists():
+            shutil.rmtree(staging)
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
-    for name in ["validate", "normalize", "render", "apply"]:
+    for name in ["validate", "normalize", "render", "apply", "redact-preview"]:
         p = sub.add_parser(name)
         p.add_argument("input")
         if name in {"normalize", "render"}:
@@ -451,6 +683,8 @@ def main():
             p.add_argument("--existing", help="Retain immutable source metadata from an existing wiki")
         if name == "apply":
             p.add_argument("operation")
+        if name == "redact-preview":
+            p.add_argument("--source-id", action="append", required=True)
     args = parser.parse_args()
     try:
         if args.command == "apply":
@@ -461,6 +695,11 @@ def main():
             if args.command == "validate":
                 validate(value)
                 print(f"Valid; revision {value['revision']}; {len(value['cards'])} cards.")
+            elif args.command == "redact-preview":
+                validate(value)
+                sources, cards = redaction_scope(value, args.source_id)
+                print(json.dumps({"source_ids": sorted(sources), "card_ids": sorted(cards),
+                                  "all_relation_rationales_and_prior_reasons": "removed"}, indent=2))
             elif args.command == "normalize":
                 sources = normalize_inbox(value, read_json(args.existing) if args.existing else None)
                 write_new_json(args.out, sources)

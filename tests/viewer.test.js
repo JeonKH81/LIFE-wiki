@@ -6,6 +6,14 @@ assert.equal(checkWiki(wiki),wiki);
 assert(searchable(wiki.cards[0],wiki,"budget thread"));
 assert(searchable(wiki.cards[3],wiki,"same work request"));
 assert(!searchable(wiki.cards[0],wiki,"unrelated needle"));
+const korean=JSON.parse(JSON.stringify(wiki));
+korean.cards[0].summary="업무 승인";
+assert(searchable(korean.cards[0],korean,"승인".normalize("NFD")));
+const firstEvent=korean.cards[0].timeline[0],firstSource=korean.sources.find(s=>s.id===firstEvent.source_id);
+firstSource.excerpt="가상\r\n승인 근거";firstEvent.quote="가상\n승인".normalize("NFD");
+assert.equal(checkWiki(korean),korean);
+const badHistory=JSON.parse(JSON.stringify(wiki));badHistory.history=[{operation_id:"invalid-time",action:"revise",recorded_at:"not-a-time",reason:"Fictional test"}];
+assert.throws(()=>checkWiki(badHistory));
 assert.throws(()=>checkWiki({schema_version:1}));
 for(const mutate of [w=>w.cards[0].status="constructor",w=>w.cards[2].timeline[0].verification="false",w=>w.cards[2].outcome.state="verified_implemented",w=>w.relations[1].certainty="confirmed",w=>w.cards[0].id+="\n"]) {const invalid=JSON.parse(JSON.stringify(wiki));mutate(invalid);assert.throws(()=>checkWiki(invalid));}
 assert(!/\b(fetch|XMLHttpRequest|WebSocket|localStorage|sessionStorage|sendBeacon|innerHTML|outerHTML|insertAdjacentHTML)\b/.test(app));

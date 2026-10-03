@@ -165,6 +165,53 @@
         "target_operation_id"
       ],
       "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "operation_id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{0,79}$(?![\\s\\S])"
+        },
+        "expected_revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "recorded_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "action": {
+          "const": "redact"
+        },
+        "source_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,79}$(?![\\s\\S])"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "actor": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{0,79}$(?![\\s\\S])"
+        }
+      },
+      "required": [
+        "operation_id",
+        "expected_revision",
+        "recorded_at",
+        "reason",
+        "action",
+        "source_ids",
+        "actor"
+      ],
+      "additionalProperties": false
     }
   ]
 }
