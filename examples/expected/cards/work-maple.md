@@ -1,6 +1,6 @@
 # MAPLE onboarding checklist
 
-Work ID: work-maple
+Record ID: work-maple
 Revision: 0
 Lifecycle: active
 Status: requested
@@ -26,7 +26,7 @@ The revised MAPLE draft is requested for review; delivery is not evidenced\.
 
 Evidence: ev-maple-review · Source: src-155166ac37b5ba34ee7c4336 · Basis: explicit · Verified: false
 
-## Related work
+## Related records
 
 - [work-lantern](work-lantern.md) · depends_on · confirmed: The source explicitly makes the MAPLE checklist a prerequisite for LANTERN launch\. (evidence: ev-lantern-dependency)
 

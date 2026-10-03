@@ -4,25 +4,25 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'none'; connect-src 'none'; base-uri 'none'; form-action 'none'">
-  <title>LIFE wiki · 업무의 맥락</title>
+  <title>LIFE wiki · 업무와 일상의 흐름</title>
   <link rel="stylesheet" href="style.css">
   <script defer src="demo-data.js"></script>
   <script defer src="app.js"></script>
 </head>
 <body>
   <header>
-    <div><span class="brand">LIFE <span>wiki</span></span><p>메일의 흐름, 업무의 맥락.</p></div>
+    <div><span class="brand">LIFE <span>wiki</span></span><p>이메일에 흩어진 업무와 일상의 흐름을 연결하다</p></div>
     <div class="load"><button id="demo" type="button">가상 예제 보기</button><label class="file">내 wiki.json 열기<input id="file" type="file" accept=".json,application/json"></label><small>선택한 파일은 이 화면에서만 읽습니다.</small></div>
   </header>
   <p id="notice" role="status" aria-live="polite">가상 예제를 보거나, 내보낸 wiki.json을 선택하세요.</p>
   <main>
-    <aside aria-label="업무 목록">
-      <label for="search">업무 찾기</label><input id="search" type="search" placeholder="업무 · 기록 · 관계 검색">
+    <aside aria-label="내 기록 목록">
+      <label for="search">내 기록 찾기</label><input id="search" type="search" placeholder="업무 · 일상 · 관계 검색">
       <div class="filters"><label for="status">상태</label><select id="status"><option value="">모든 상태</option><option value="unknown">미확인</option><option value="proposed">제안</option><option value="requested">요청</option><option value="approved">승인</option><option value="implemented">실행 근거 있음</option></select></div>
       <label class="archive"><input id="archive" type="checkbox"> 합쳐지거나 나뉜 이전 카드 포함</label>
-      <p id="count"></p><nav id="list" aria-label="업무 선택"></nav>
+      <p id="count"></p><nav id="list" aria-label="기록 선택"></nav>
     </aside>
-    <article id="detail" aria-label="업무 카드"><div class="empty"><h1>하나의 업무를 한곳에서.</h1><p>제안부터 현재까지, 근거를 따라 읽으세요.<br>승인만 있는 업무는 결과를 미확인으로 남깁니다.</p></div></article>
+    <article id="detail" aria-label="업무와 일상 카드"><div class="empty"><h1>업무와 일상, 하나의 기록으로.</h1><p>제안부터 현재까지, 근거를 따라 읽으세요.<br>승인이나 예약 확인만으로 실제 실행을 단정하지 않습니다.</p></div></article>
   </main>
   <footer>출처가 말해 주는 범위까지 기록합니다. 불확실한 연결과 결과는 그대로 보입니다.</footer>
 </body>

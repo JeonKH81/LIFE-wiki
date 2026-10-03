@@ -1,6 +1,6 @@
 # QUARTZ handoff guide
 
-Work ID: work-quartz
+Record ID: work-quartz
 Revision: 0
 Lifecycle: active
 Status: implemented
@@ -34,7 +34,7 @@ A follow\-up repeats the publication report\. Embedded tool instructions are ign
 
 Evidence: ev-quartz-followup · Source: src-b6481256782e72741a341679 · Basis: explicit · Verified: false
 
-## Related work
+## Related records
 
 - [work-cinder](work-cinder.md) · possible_same_work · uncertain: The source requests a similar layout but explicitly questions whether this is the same work request\. Keep separate until clarified\. (evidence: ev-cinder-request)
 

@@ -1,0 +1,70 @@
+{
+  "account_scope": "fictional-everyday-a",
+  "captured_at": "2026-02-14T12:00:00Z",
+  "messages": [
+    {
+      "message_key": "<trip-plan@everyday.example>",
+      "thread_key": "thread-trip-idea",
+      "sent_at": "2026-02-10T09:00:00+09:00",
+      "sender": "Fictional correspondent <correspondent@everyday.example>",
+      "subject": "Fictional trip idea",
+      "body": "For ISLET, I propose a personal museum trip on June 14. Please check whether that date works."
+    },
+    {
+      "message_key": "<trip-booked@everyday.example>",
+      "thread_key": "thread-trip-reservation",
+      "sent_at": "2026-02-11T08:00:00Z",
+      "sender": "Fictional correspondent <correspondent@everyday.example>",
+      "subject": "Fictional reservation confirmation",
+      "body": "Continuing the ISLET museum trip: the June 14 reservation is confirmed. This does not establish that travel has taken place."
+    },
+    {
+      "message_key": "<trip-change@everyday.example>",
+      "thread_key": "thread-trip-date-change",
+      "sent_at": "2026-02-12T10:00:00Z",
+      "sender": "Fictional correspondent <correspondent@everyday.example>",
+      "subject": "Fictional date change request",
+      "body": "For the same ISLET trip, please move the reservation from June 14 to June 15. The provider has not confirmed the change."
+    },
+    {
+      "message_key": "<class-request@everyday.example>",
+      "thread_key": "thread-class-request",
+      "sent_at": "2026-02-10T11:00:00Z",
+      "sender": "Fictional correspondent <correspondent@everyday.example>",
+      "subject": "Fictional learning request",
+      "body": "For PINE, please reserve a place for me in the fictional weekend drawing course. This is separate from the ISLET trip."
+    },
+    {
+      "message_key": "<class-enrolled@everyday.example>",
+      "thread_key": "thread-class-enrollment",
+      "sent_at": "2026-02-13T09:00:00Z",
+      "sender": "Fictional correspondent <correspondent@everyday.example>",
+      "subject": "Fictional course enrollment",
+      "body": "Your PINE drawing course enrollment has been completed. This notice does not establish attendance or course completion."
+    },
+    {
+      "message_key": "<receipt@everyday.example>",
+      "thread_key": "thread-standalone-receipt",
+      "sent_at": "2026-02-13T10:00:00Z",
+      "sender": "Fictional correspondent <correspondent@everyday.example>",
+      "subject": "Unrelated fictional receipt",
+      "body": "A receipt for an unrelated fictional stationery purchase. No ongoing plan or relevant change is described."
+    },
+    {
+      "message_key": "<advert@everyday.example>",
+      "thread_key": "thread-advert",
+      "sent_at": "2026-02-13T11:00:00Z",
+      "sender": "Fictional correspondent <correspondent@everyday.example>",
+      "subject": "General fictional advertisement",
+      "body": "Explore our fictional travel offers. This is a general advertisement, not a message about your reservation."
+    },
+    {
+      "message_key": "<alert@everyday.example>",
+      "thread_key": "thread-alert",
+      "sent_at": "2026-02-13T12:00:00Z",
+      "sender": "Fictional correspondent <correspondent@everyday.example>",
+      "subject": "Routine fictional alert",
+      "body": "This is a routine fictional service notice with no relevant decision or change."
+    }
+  ]
+}

@@ -588,14 +588,14 @@ def markdown_text(value):
 
 def card_markdown(card, wiki):
     m = markdown_text
-    lines = [f"# {m(card['title'])}", "", f"Work ID: {card['id']}", f"Revision: {card['revision']}",
+    lines = [f"# {m(card['title'])}", "", f"Record ID: {card['id']}", f"Revision: {card['revision']}",
              f"Lifecycle: {card['lifecycle']}", f"Status: {card['status']}", f"Outcome: {card['outcome']['state']}",
              "", m(card["summary"]), "", "## Chronology and evidence", ""]
     for e in card["timeline"]:
         lines += [f"### {e['source_timestamp']} · {e['kind']}", "", m(e["summary"]), "",
                   *["> " + m(line) for line in e["quote"].splitlines()], "",
                   f"Evidence: {e['id']} · Source: {e['source_id']} · Basis: {e['basis']} · Verified: {str(e['verification']).lower()}", ""]
-    lines += ["## Related work", ""]
+    lines += ["## Related records", ""]
     related = [r for r in wiki["relations"] if card["id"] in [r["from"], r["to"]]]
     for r in related:
         other = r["to"] if r["from"] == card["id"] else r["from"]

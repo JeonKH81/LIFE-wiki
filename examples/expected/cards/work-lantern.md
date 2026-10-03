@@ -1,6 +1,6 @@
 # LANTERN demonstration pilot
 
-Work ID: work-lantern
+Record ID: work-lantern
 Revision: 0
 Lifecycle: active
 Status: approved
@@ -42,7 +42,7 @@ The latest source explicitly leaves launch unconfirmed\.
 
 Evidence: ev-lantern-gap · Source: src-155166ac37b5ba34ee7c4336 · Basis: explicit · Verified: false
 
-## Related work
+## Related records
 
 - [work-maple](work-maple.md) · depends_on · confirmed: The source explicitly makes the MAPLE checklist a prerequisite for LANTERN launch\. (evidence: ev-lantern-dependency)
 

@@ -32,6 +32,10 @@ const context={document,window:{LIFE_WIKI_DEMO:wiki},console};vm.createContext(c
 ids.demo.events.click();assert.equal(ids.list.children.length,4);assert.equal(ids.detail.children[1].textContent,"LANTERN demonstration pilot");
 ids.search.value="CINDER";ids.search.events.input();assert.equal(ids.list.children.length,1);ids.list.children[0].events.click();assert.equal(ids.detail.children[1].textContent,"CINDER visitor guide");
 ids.search.value="";ids.status.value="approved";ids.status.events.change();assert.equal(ids.list.children.length,1);
+const demoContext={window:{}};vm.createContext(demoContext);vm.runInContext(fs.readFileSync(path.join(root,"skills/life-wiki/assets/viewer/demo-data.js"),"utf8"),demoContext);
+context.window.LIFE_WIKI_DEMO=demoContext.window.LIFE_WIKI_DEMO;ids.demo.events.click();assert.equal(ids.list.children.length,6);assert(ids.count.textContent.includes("6개 기록"));
+ids.search.value="work-islet";ids.search.events.input();assert.equal(ids.list.children.length,1);ids.list.children[0].events.click();assert.equal(ids.detail.children[1].textContent,"ISLET 여행 예약 변경");
+ids.search.value="";ids.status.value="implemented";ids.status.events.change();assert.equal(ids.list.children.length,2);
 function allText(node){return node.textContent+node.children.map(allText).join(" ");}
 const attack=JSON.parse(JSON.stringify(wiki));attack.cards[0].summary='<img src=x onerror="alert(1)">';context.window.LIFE_WIKI_DEMO=attack;ids.demo.events.click();assert(allText(ids.detail).includes('<img src=x onerror="alert(1)">'));
 assert(!ids.detail.children.some(n=>n.tag==="img"));

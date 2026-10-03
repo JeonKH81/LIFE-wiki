@@ -2,6 +2,8 @@
 
 Every person, organization, address, message, and work item is invented. Reserved `.example` domains are inert. No live email is fetched.
 
+These four work examples demonstrate the evidence rules used for both work and everyday life. The [everyday life example](everyday/README.md) adds a trip reservation change, learning enrollment, and messages that should be excluded. The viewer demo combines all six cards. The original work identifiers and fixture boundaries remain unchanged.
+
 `inbox.json` contains nine records, including one repeated message. Normalize to eight sources. Work boundaries are deliberately different from threads and subjects:
 
 | Card | Expected result | Why |

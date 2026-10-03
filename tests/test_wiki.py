@@ -322,7 +322,44 @@ class WikiTests(unittest.TestCase):
             self.assertTrue(addresses); self.assertTrue(all(a.endswith(".example") for a in addresses))
         js = (ROOT/"skills/life-wiki/assets/viewer/demo-data.js").read_text()
         data = json.loads(js.split("window.LIFE_WIKI_DEMO = ", 1)[1].rstrip(";\n"))
-        self.assertEqual(data, self.w)
+        expected = copy.deepcopy(self.w)
+        everyday = wiki.read_json(ROOT/"examples/everyday/expected/wiki.json")
+        expected["sources"].extend(everyday["sources"])
+        expected["cards"].extend(everyday["cards"])
+        self.assertEqual(data, expected)
+        wiki.validate(data)
+
+    def test_everyday_provenance_selection_and_unverified_outcomes(self):
+        sample = wiki.read_json(ROOT/"examples/everyday/inbox.json")
+        everyday = wiki.read_json(ROOT/"examples/everyday/expected/wiki.json")
+        with patch("socket.socket", side_effect=AssertionError("No network")):
+            normalized = wiki.normalize_inbox(sample)
+            wiki.validate(everyday)
+        self.assertEqual(len(normalized), 8)
+        self.assertEqual(len(everyday["sources"]), 5)
+        by_id = wiki.index_unique(normalized, "source")
+        for source in everyday["sources"]:
+            self.assertEqual(source, by_id[source["id"]])
+        selected = {s["message_key"] for s in everyday["sources"]}
+        self.assertTrue(all(key.endswith(".example") for key in selected))
+        self.assertTrue(all(f"{key}@everyday.example" not in selected for key in ("receipt", "advert", "alert")))
+        cards = wiki.index_unique(everyday["cards"], "card")
+        self.assertEqual(cards["work-islet"]["status"], "requested")
+        self.assertEqual(cards["work-islet"]["outcome"]["state"], "unknown")
+        self.assertEqual(cards["work-pine"]["outcome"]["state"], "reported_implemented")
+        self.assertFalse(any(e["verification"] for c in cards.values() for e in c["timeline"]))
+        self.assertEqual(everyday["relations"], [])
+
+    def test_everyday_export_matches_reviewed_cards(self):
+        everyday = wiki.read_json(ROOT/"examples/everyday/expected/wiki.json")
+        with tempfile.TemporaryDirectory() as temp:
+            destination = Path(temp)/"everyday-export"
+            wiki.render(everyday, destination)
+            self.assertEqual(wiki.read_json(destination/"wiki.json"), everyday)
+            for card in everyday["cards"]:
+                name = card["id"] + ".md"
+                self.assertEqual((destination/"cards"/name).read_text(),
+                                 (ROOT/"examples/everyday/expected/cards"/name).read_text())
 
     def test_duplicate_json_keys_rejected(self):
         with tempfile.TemporaryDirectory() as temp:

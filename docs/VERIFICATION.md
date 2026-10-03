@@ -1,4 +1,14 @@
-# Verification record for the 2026-10-03 review fixes
+# Verification record
+
+## Work and everyday life positioning — 2026-10-03
+
+The work-and-life revision updates visible viewer and exported-card wording, bilingual introductions and prompts, skill guidance, and fictional examples. Technical identifiers, schemas, original work-source fixtures, and the privacy-masked screenshot remain unchanged. The repository remains private until the user requests publication.
+
+All 54 local Python checks passed with Python 3.14.7. Direct viewer checks passed with Node.js v24.13.0. The additional everyday life fixture contains two cards for a reservation change and learning enrollment, five retained email sources, and no invented relationship. Its eight-message input also includes an unrelated receipt, advertisement, and routine alert excluded from the manually interpreted output. The demo combines the four original work cards and these two everyday life cards. These results validate formatting, evidence integrity, and viewer behavior, not automatic email classification or real-world completion.
+
+The prior commit `18554c42e71a3efb9aa7c47ee6be3a3c860bdca7` passed hosted run `37114687862` with 52 checks on each of Python 3.10/3.12/3.14 and Node.js 22. The revised workflow keeps those versions and also validates the everyday life JSON. Verify hosted results against the exact new commit in Actions; local results do not establish that the new hosted run has completed. No software was installed or browser protections relaxed for this revision.
+
+## Earlier review fixes — 2026-10-03
 
 This document records the local checks for the 2026-10-03 review fixes. The public comparison baseline was `1114830`. Results below distinguish reported execution from configured checks and unverified behavior. All fixtures and benchmarks are fictional; no real user material was permanently deleted.
 
@@ -6,7 +16,7 @@ This document records the local checks for the 2026-10-03 review fixes. The publ
 
 The supplied 2026-10-03 review reports 35 Python tests passing with Python 3.13/jsonschema 4.26, a passing Node viewer check, successful validation, nine inbox records normalized to eight sources, and rendered Markdown matching fixtures byte for byte. These are that review's results, not a new baseline execution by this document's author.
 
-## Current local checks
+## Review-fix local checks
 
 All 52 local Python checks passed under Python 3.14.7 and 3.12.2. Direct viewer checks passed with Node.js v24.13.0, all five schema meta-checks passed, and the four-card fixture validated. The checks cover legacy/compact history, corruption, Unicode/timestamps, conservative redaction, tombstone protection, failed writes, and exclusive export rename. Independent review found and rechecked fixes for viewer line-ending comparison and UTC date overflow; no remaining critical issue was found within this review scope. The final local checks passed after those fixes.
 
@@ -29,6 +39,7 @@ Install `requirements.txt` in the chosen Python environment; provide Node.js for
 python3 -m unittest discover -s tests -v
 node tests/viewer.test.js
 python3 skills/life-wiki/scripts/wiki.py validate examples/expected/wiki.json
+python3 skills/life-wiki/scripts/wiki.py validate examples/everyday/expected/wiki.json
 python3 skills/life-wiki/scripts/wiki.py normalize examples/inbox.json --out /tmp/life-wiki-check-sources.json
 python3 skills/life-wiki/scripts/wiki.py render examples/expected/wiki.json --out /tmp/life-wiki-check-export
 ```

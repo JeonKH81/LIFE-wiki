@@ -1,5 +1,7 @@
 # Portable data model (v1)
 
+Cards represent coherent work or everyday life activities evidenced in email. Technical names such as `work-*`, `<work-id>`, and `possible_same_work` remain unchanged for compatibility; they do not restrict cards to employment. No separate daily-life schema or inferred non-email facts are introduced.
+
 `wiki.json` is authoritative; generated `cards/<work-id>.md` are readable projections. Edit JSON through a protected operation, then regenerate cards. Manual Markdown edits are not imported automatically. Read them before updating and incorporate intended changes in the proposal. Export requires a new directory and leaves an existing destination unchanged.
 
 Schemas are in `../schemas/`: `wiki.schema.json`, `card.schema.json`, `provenance.schema.json`, `relations.schema.json`, and `operation.schema.json`. Unknown properties are rejected. Validation checks schemas, references, timestamps, evidence, revisions, and the entire history chain.

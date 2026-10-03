@@ -1,6 +1,6 @@
 # CINDER visitor guide
 
-Work ID: work-cinder
+Record ID: work-cinder
 Revision: 0
 Lifecycle: active
 Status: requested
@@ -18,7 +18,7 @@ A CINDER visitor guide is requested; shared layout does not establish shared wor
 
 Evidence: ev-cinder-request · Source: src-8f1651faa5783d50b283c44b · Basis: explicit · Verified: false
 
-## Related work
+## Related records
 
 - [work-quartz](work-quartz.md) · possible_same_work · uncertain: The source requests a similar layout but explicitly questions whether this is the same work request\. Keep separate until clarified\. (evidence: ev-cinder-request)
 

@@ -1,6 +1,6 @@
 "use strict";
 /* Original local viewer: no network, browser storage, or HTML interpretation. */
-const labels = {unknown:"미확인",proposed:"제안",requested:"요청",approved:"승인",implemented:"실행 근거 있음",reported_implemented:"실행 보고",verified_implemented:"독립 확인",active:"현재 카드",retired:"이전 카드",related:"관련 업무",depends_on:"의존 업무",possible_same_work:"같은 업무일 가능성",confirmed:"근거 확인",uncertain:"불확실"};
+const labels = {unknown:"미확인",proposed:"제안",requested:"요청",approved:"승인",implemented:"실행 근거 있음",reported_implemented:"실행 보고",verified_implemented:"독립 확인",active:"현재 카드",retired:"이전 카드",related:"관련 기록",depends_on:"의존 관계",possible_same_work:"같은 일일 가능성",confirmed:"근거 확인",uncertain:"불확실"};
 function textValue(v) { if (typeof v !== "string") throw new Error("문자열 형식을 확인하세요."); return v; }
 function normalizedText(v) { return v.replace(/\r\n?/g,"\n").normalize("NFC"); }
 function checkWiki(w) {
@@ -41,7 +41,7 @@ function checkWiki(w) {
   for(const r of w.relations) {
     for(const key of ["id","from","to","type","certainty","rationale","recorded_at"])textValue(r[key]);
     const evidence=new Set(w.cards.filter(c=>c.id===r.from||c.id===r.to).flatMap(c=>c.timeline.map(e=>e.id)));
-    if(!id(r.id)||relationIds.has(r.id)||!ids.has(r.from)||!ids.has(r.to)||r.from===r.to||!["related","depends_on","possible_same_work"].includes(r.type)||!["confirmed","uncertain"].includes(r.certainty)||!r.rationale||!stamp(r.recorded_at)||!Array.isArray(r.evidence_ids)||r.evidence_ids.some(eid=>!evidence.has(eid))||(r.certainty==="confirmed"&&!r.evidence_ids.length)||(r.type==="possible_same_work"&&r.certainty!=="uncertain"))throw new Error("업무 관계를 확인하세요.");
+    if(!id(r.id)||relationIds.has(r.id)||!ids.has(r.from)||!ids.has(r.to)||r.from===r.to||!["related","depends_on","possible_same_work"].includes(r.type)||!["confirmed","uncertain"].includes(r.certainty)||!r.rationale||!stamp(r.recorded_at)||!Array.isArray(r.evidence_ids)||r.evidence_ids.some(eid=>!evidence.has(eid))||(r.certainty==="confirmed"&&!r.evidence_ids.length)||(r.type==="possible_same_work"&&r.certainty!=="uncertain"))throw new Error("기록 간의 연결을 확인하세요.");
     relationIds.add(r.id);
   }
   for(const h of w.history) {
@@ -77,13 +77,13 @@ function mount() {
       const li=element("li"),time=element("time",e.source_timestamp);time.dateTime=e.source_timestamp;
       li.append(time,element("span",`${labels[e.kind]||e.kind} · ${e.basis==="explicit"?"명시된 근거":"해석 포함"}`,"kind"),element("p",e.summary),element("blockquote",e.quote),element("small",`${e.id} · ${e.source_id}${e.verification?" · 독립 확인":""}`,"evidence"));timeline.append(li);
     }
-    detail.append(timeline,element("h2","연결된 업무"));
+    detail.append(timeline,element("h2","연결된 기록"));
     const relations=wiki.relations.filter(r=>r.from===id||r.to===id);
     if(!relations.length) detail.append(element("p","기록된 연결이 없습니다."));
     for(const r of relations) {
       const otherId=r.from===id?r.to:r.from,other=wiki.cards.find(x=>x.id===otherId),box=element("div",undefined,"relation"),button=element("button",other?other.title:otherId);button.type="button";
       button.addEventListener("click",()=>{if(other.lifecycle==="retired") $("archive").checked=true;$("search").value="";$("status").value="";showCard(otherId);renderList();});
-      box.append(button,element("p",`${r.from===id?"이 업무 →":"이 업무 ←"} ${labels[r.type]} · ${labels[r.certainty]}`,r.certainty==="uncertain"?"unknown":""),element("p",r.rationale),element("small",`근거: ${r.evidence_ids.join(", ")||"없음"}`,"evidence"));detail.append(box);
+      box.append(button,element("p",`${r.from===id?"이 기록 →":"이 기록 ←"} ${labels[r.type]} · ${labels[r.certainty]}`,r.certainty==="uncertain"?"unknown":""),element("p",r.rationale),element("small",`근거: ${r.evidence_ids.join(", ")||"없음"}`,"evidence"));detail.append(box);
     }
     detail.append(element("h2","아직 알 수 없는 것"));
     if(c.unknowns.length){const list=element("ul",undefined,"questions");for(const u of c.unknowns)list.append(element("li",u));detail.append(list);}else detail.append(element("p","추가 미확인 사항은 기록되지 않았습니다. 완료 판정은 아닙니다."));
@@ -100,9 +100,9 @@ function mount() {
   function renderList() {
     const list=$("list");list.replaceChildren();if(!wiki)return;
     const cards=wiki.cards.filter(c=>($("archive").checked||c.lifecycle==="active")&&(!$("status").value||c.status===$("status").value)&&searchable(c,wiki,$("search").value));
-    $("count").textContent=`${cards.length}개 업무 · 전체 판본 ${wiki.revision}`;
+    $("count").textContent=`${cards.length}개 기록 · 전체 판본 ${wiki.revision}`;
     for(const c of cards){const button=element("button");button.type="button";button.className=c.id===selected?"selected":"";button.setAttribute("aria-pressed",String(c.id===selected));button.append(element("strong",c.title),element("small",`${labels[c.status]} · 결과 ${labels[c.outcome.state]}`));button.addEventListener("click",()=>showCard(c.id));list.append(button);}
-    if(!cards.length)list.append(element("p","검색에 맞는 업무가 없습니다. 검색어나 상태를 바꿔 보세요."));
+    if(!cards.length)list.append(element("p","검색에 맞는 기록이 없습니다. 검색어나 상태를 바꿔 보세요."));
   }
   function load(value,name) {
     wiki=checkWiki(value);selected=null;$("search").value="";$("status").value="";$("archive").checked=false;renderList();
@@ -112,7 +112,7 @@ function mount() {
   $("demo").addEventListener("click",()=>{try{load(window.LIFE_WIKI_DEMO,"가상 예제");}catch{notice("가상 예제를 읽을 수 없습니다. 패키지의 demo-data.js를 확인하세요.");}});
   $("file").addEventListener("change",async event=>{
     const file=event.target.files[0];if(!file)return;
-    try {if(file.size>8*1024*1024)throw new Error("파일이 8MB를 넘습니다. 선택한 업무만 새로 내보내세요.");load(JSON.parse(await file.text()),"선택한 파일");}
+    try {if(file.size>8*1024*1024)throw new Error("파일이 8MB를 넘습니다. 선택한 기록만 새로 내보내세요.");load(JSON.parse(await file.text()),"선택한 파일");}
     catch(error){notice(`열 수 없습니다. ${error instanceof SyntaxError?"JSON 형식을 확인하세요.":error.message}`);}finally{event.target.value="";}
   });
   $("search").addEventListener("input",renderList);$("status").addEventListener("change",renderList);$("archive").addEventListener("change",renderList);

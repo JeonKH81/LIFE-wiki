@@ -1,0 +1,145 @@
+{
+  "schema_version": 1,
+  "revision": 0,
+  "sources": [
+    {
+      "id": "src-f3e6fc67db37e12b0cda7be9",
+      "account_scope": "fictional-everyday-a",
+      "message_key": "trip-plan@everyday.example",
+      "sent_at": "2026-02-10T09:00:00+09:00",
+      "captured_at": "2026-02-14T12:00:00Z",
+      "content_sha256": "fe8a1ac295990ed2c7e0e5fc12d0b4d3789511b30bbcf341fecd94f0bbed6452",
+      "excerpt": "For ISLET, I propose a personal museum trip on June 14. Please check whether that date works."
+    },
+    {
+      "id": "src-f0a0561191fc2cbbd0358a29",
+      "account_scope": "fictional-everyday-a",
+      "message_key": "class-request@everyday.example",
+      "sent_at": "2026-02-10T11:00:00Z",
+      "captured_at": "2026-02-14T12:00:00Z",
+      "content_sha256": "4593a28d4e57bf7a8d6199b39b331500c6794c9a58de946ddde1dca2a9ab4691",
+      "excerpt": "For PINE, please reserve a place for me in the fictional weekend drawing course. This is separate from the ISLET trip."
+    },
+    {
+      "id": "src-f6e83b23f3d09e6e07c1ffa8",
+      "account_scope": "fictional-everyday-a",
+      "message_key": "trip-booked@everyday.example",
+      "sent_at": "2026-02-11T08:00:00Z",
+      "captured_at": "2026-02-14T12:00:00Z",
+      "content_sha256": "3875740c3fab9020970bd3f1dfff813c36992c7d066645d1897cc0360d8e0579",
+      "excerpt": "Continuing the ISLET museum trip: the June 14 reservation is confirmed. This does not establish that travel has taken place."
+    },
+    {
+      "id": "src-3398002c51d38a2162018e36",
+      "account_scope": "fictional-everyday-a",
+      "message_key": "trip-change@everyday.example",
+      "sent_at": "2026-02-12T10:00:00Z",
+      "captured_at": "2026-02-14T12:00:00Z",
+      "content_sha256": "a049ea815b85a6ff135e8eb130e861cfb08674d5c2f941d812d6b00a5c8ec5d0",
+      "excerpt": "For the same ISLET trip, please move the reservation from June 14 to June 15. The provider has not confirmed the change."
+    },
+    {
+      "id": "src-93222b5e99c2ff58898fc1d0",
+      "account_scope": "fictional-everyday-a",
+      "message_key": "class-enrolled@everyday.example",
+      "sent_at": "2026-02-13T09:00:00Z",
+      "captured_at": "2026-02-14T12:00:00Z",
+      "content_sha256": "abd4ba35453c8b8da801fc90695d88f33fb4c765ef0ae186680eba486455cf57",
+      "excerpt": "Your PINE drawing course enrollment has been completed. This notice does not establish attendance or course completion."
+    }
+  ],
+  "cards": [
+    {
+      "id": "work-islet",
+      "revision": 0,
+      "lifecycle": "active",
+      "replaced_by": [],
+      "title": "ISLET 여행 예약 변경",
+      "summary": "가상 여행의 예약 확인과 날짜 변경 요청이 여러 대화에 이어집니다. 최신 변경 요청의 승인이나 실제 여행은 확인되지 않았습니다.",
+      "status": "requested",
+      "outcome": {
+        "state": "unknown",
+        "evidence_ids": []
+      },
+      "timeline": [
+        {
+          "id": "ev-islet-proposal",
+          "source_id": "src-f3e6fc67db37e12b0cda7be9",
+          "source_timestamp": "2026-02-10T09:00:00+09:00",
+          "kind": "proposed",
+          "quote": "For ISLET, I propose a personal museum trip on June 14. Please check whether that date works.",
+          "summary": "6월 14일 여행이 제안되었습니다.",
+          "basis": "explicit",
+          "verification": false
+        },
+        {
+          "id": "ev-islet-reservation",
+          "source_id": "src-f6e83b23f3d09e6e07c1ffa8",
+          "source_timestamp": "2026-02-11T08:00:00Z",
+          "kind": "approved",
+          "quote": "Continuing the ISLET museum trip: the June 14 reservation is confirmed. This does not establish that travel has taken place.",
+          "summary": "6월 14일 예약이 확인되었으며 실제 여행을 뜻하지 않습니다.",
+          "basis": "explicit",
+          "verification": false
+        },
+        {
+          "id": "ev-islet-change",
+          "source_id": "src-3398002c51d38a2162018e36",
+          "source_timestamp": "2026-02-12T10:00:00Z",
+          "kind": "requested",
+          "quote": "For the same ISLET trip, please move the reservation from June 14 to June 15. The provider has not confirmed the change.",
+          "summary": "같은 여행의 예약을 6월 15일로 바꾸도록 요청했으나 제공자의 변경 확인은 없습니다.",
+          "basis": "explicit",
+          "verification": false
+        }
+      ],
+      "unknowns": [
+        "예약 변경이 승인되거나 반영되었는지 미확인입니다.",
+        "실제 여행 여부는 이메일로 확인되지 않았습니다."
+      ]
+    },
+    {
+      "id": "work-pine",
+      "revision": 0,
+      "lifecycle": "active",
+      "replaced_by": [],
+      "title": "PINE 드로잉 수업 등록",
+      "summary": "가상 드로잉 수업에 자리 예약을 요청했고 등록 완료 안내를 받았습니다. 등록 안내만으로 실제 참석이나 배움의 완료를 단정하지 않습니다.",
+      "status": "implemented",
+      "outcome": {
+        "state": "reported_implemented",
+        "evidence_ids": [
+          "ev-pine-enrollment"
+        ]
+      },
+      "timeline": [
+        {
+          "id": "ev-pine-request",
+          "source_id": "src-f0a0561191fc2cbbd0358a29",
+          "source_timestamp": "2026-02-10T11:00:00Z",
+          "kind": "requested",
+          "quote": "For PINE, please reserve a place for me in the fictional weekend drawing course. This is separate from the ISLET trip.",
+          "summary": "여행과 별개인 수업의 자리를 예약하도록 요청했습니다.",
+          "basis": "explicit",
+          "verification": false
+        },
+        {
+          "id": "ev-pine-enrollment",
+          "source_id": "src-93222b5e99c2ff58898fc1d0",
+          "source_timestamp": "2026-02-13T09:00:00Z",
+          "kind": "implemented",
+          "quote": "Your PINE drawing course enrollment has been completed. This notice does not establish attendance or course completion.",
+          "summary": "제공자가 등록 완료를 안내했습니다. 별도 자료로 독립 확인한 것은 아닙니다.",
+          "basis": "explicit",
+          "verification": false
+        }
+      ],
+      "unknowns": [
+        "등록 완료는 안내된 내용이며 독립적으로 검증되지 않았습니다.",
+        "실제 참석과 수업 완료 여부는 미확인입니다."
+      ]
+    }
+  ],
+  "relations": [],
+  "history": []
+}

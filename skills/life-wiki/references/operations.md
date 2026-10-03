@@ -1,5 +1,7 @@
 # Protected operations and local export
 
+The same protected operations apply to work and everyday life cards. Existing technical identifiers and schemas remain unchanged. A user-directed change to a reservation or learning record still requires source evidence; the helper does not book, cancel, change calendars, collect live email, or decide that an activity is complete.
+
 Python 3.10+ and `jsonschema >=4.18,<5` are required. Timestamp checking is explicit; no optional format package is needed. The installed skill is self-contained. From the project where it was copied:
 
 ```sh
@@ -78,4 +80,4 @@ Free text copied into unrelated cards without evidence connections is not traced
 
 The code uses macOS `renamex_np`, Linux `renameat2`, or Windows rename semantics. Platforms lacking required exclusive rename fail explicitly. Implementing these paths does not establish that each operating system has been exercised; see the repository [verification summary](../../../docs/VERIFICATION.md).
 
-Open `index.html` locally and select its exported JSON, or the fictional demo. Data do not load automatically or contact a server. The viewer uses text nodes, cannot change work or follow source URLs, and saves no personal data in browser storage. The file limit remains 8MB. Actual browser CSP behavior under `file://` remains unverified; Node tests do not establish Chrome/Firefox local-file compatibility. Keep exports private and review the complete JSON/history before publication.
+Open `index.html` locally and select its exported JSON, or the fictional demo. Data do not load automatically or contact a server. The viewer uses text nodes, cannot change records or follow source URLs, and saves no personal data in browser storage. The file limit remains 8MB. Actual browser CSP behavior under `file://` remains unverified; Node tests do not establish Chrome/Firefox local-file compatibility. Keep exports private and review the complete JSON/history before publication.
