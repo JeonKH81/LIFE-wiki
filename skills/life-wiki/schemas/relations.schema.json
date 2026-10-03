@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://life-wiki.invalid/schemas/relations.schema.json",
+  "$defs": {
+    "relation": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{0,79}$(?![\\s\\S])"
+        },
+        "from": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{0,79}$(?![\\s\\S])"
+        },
+        "to": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{0,79}$(?![\\s\\S])"
+        },
+        "type": {
+          "enum": [
+            "related",
+            "depends_on",
+            "possible_same_work"
+          ]
+        },
+        "certainty": {
+          "enum": [
+            "confirmed",
+            "uncertain"
+          ]
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidence_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,79}$(?![\\s\\S])"
+          },
+          "minItems": 0,
+          "uniqueItems": true
+        },
+        "recorded_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "from",
+        "to",
+        "type",
+        "certainty",
+        "rationale",
+        "evidence_ids",
+        "recorded_at"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "type": "array",
+  "items": {
+    "$ref": "#/$defs/relation"
+  },
+  "minItems": 0
+}

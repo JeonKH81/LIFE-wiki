@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://life-wiki.invalid/schemas/card.schema.json",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{0,79}$(?![\\s\\S])"
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "lifecycle": {
+      "enum": [
+        "active",
+        "retired"
+      ]
+    },
+    "replaced_by": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9-]{0,79}$(?![\\s\\S])"
+      },
+      "minItems": 0,
+      "uniqueItems": true
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "enum": [
+        "unknown",
+        "proposed",
+        "requested",
+        "approved",
+        "implemented"
+      ]
+    },
+    "outcome": {
+      "type": "object",
+      "properties": {
+        "state": {
+          "enum": [
+            "unknown",
+            "reported_implemented",
+            "verified_implemented"
+          ]
+        },
+        "evidence_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,79}$(?![\\s\\S])"
+          },
+          "minItems": 0,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "state",
+        "evidence_ids"
+      ],
+      "additionalProperties": false
+    },
+    "timeline": {
+      "type": "array",
+      "items": {
+        "$ref": "provenance.schema.json#/$defs/event"
+      },
+      "minItems": 1
+    },
+    "unknowns": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 0
+    }
+  },
+  "required": [
+    "id",
+    "revision",
+    "lifecycle",
+    "replaced_by",
+    "title",
+    "summary",
+    "status",
+    "outcome",
+    "timeline",
+    "unknowns"
+  ],
+  "additionalProperties": false
+}

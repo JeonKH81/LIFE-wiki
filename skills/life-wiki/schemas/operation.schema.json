@@ -1,0 +1,170 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://life-wiki.invalid/schemas/operation.schema.json",
+  "oneOf": [
+    {
+      "type": "object",
+      "properties": {
+        "operation_id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{0,79}$(?![\\s\\S])"
+        },
+        "expected_revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "recorded_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "action": {
+          "const": "revise"
+        },
+        "state": {
+          "$ref": "wiki.schema.json#/$defs/state"
+        }
+      },
+      "required": [
+        "operation_id",
+        "expected_revision",
+        "recorded_at",
+        "reason",
+        "action",
+        "state"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "operation_id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{0,79}$(?![\\s\\S])"
+        },
+        "expected_revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "recorded_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "action": {
+          "const": "merge"
+        },
+        "card_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,79}$(?![\\s\\S])"
+          },
+          "minItems": 2,
+          "uniqueItems": true
+        },
+        "replacement": {
+          "$ref": "card.schema.json"
+        }
+      },
+      "required": [
+        "operation_id",
+        "expected_revision",
+        "recorded_at",
+        "reason",
+        "action",
+        "card_ids",
+        "replacement"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "operation_id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{0,79}$(?![\\s\\S])"
+        },
+        "expected_revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "recorded_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "action": {
+          "const": "split"
+        },
+        "card_id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{0,79}$(?![\\s\\S])"
+        },
+        "replacements": {
+          "type": "array",
+          "items": {
+            "$ref": "card.schema.json"
+          },
+          "minItems": 2
+        }
+      },
+      "required": [
+        "operation_id",
+        "expected_revision",
+        "recorded_at",
+        "reason",
+        "action",
+        "card_id",
+        "replacements"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "operation_id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{0,79}$(?![\\s\\S])"
+        },
+        "expected_revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "recorded_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "action": {
+          "const": "undo"
+        },
+        "target_operation_id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{0,79}$(?![\\s\\S])"
+        }
+      },
+      "required": [
+        "operation_id",
+        "expected_revision",
+        "recorded_at",
+        "reason",
+        "action",
+        "target_operation_id"
+      ],
+      "additionalProperties": false
+    }
+  ]
+}

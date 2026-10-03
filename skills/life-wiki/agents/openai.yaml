@@ -1,0 +1,4 @@
+interface:
+  display_name: "LIFE wiki"
+  short_description: "Reconstruct work from email with evidence and context"
+  default_prompt: "Use $life-wiki to organize the supplied emails into coherent work cards with chronology, evidence, and unresolved outcomes."

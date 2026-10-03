@@ -1,0 +1,1 @@
+-r skills/life-wiki/requirements.txt

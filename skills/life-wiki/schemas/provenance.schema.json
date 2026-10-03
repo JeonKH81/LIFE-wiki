@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://life-wiki.invalid/schemas/provenance.schema.json",
+  "$defs": {
+    "source": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{0,79}$(?![\\s\\S])"
+        },
+        "account_scope": {
+          "type": "string",
+          "minLength": 1
+        },
+        "message_key": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sent_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "captured_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "content_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$(?![\\s\\S])"
+        },
+        "excerpt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "uri": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "id",
+        "account_scope",
+        "message_key",
+        "sent_at",
+        "captured_at",
+        "content_sha256",
+        "excerpt"
+      ],
+      "additionalProperties": false
+    },
+    "event": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{0,79}$(?![\\s\\S])"
+        },
+        "source_id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{0,79}$(?![\\s\\S])"
+        },
+        "source_timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "kind": {
+          "enum": [
+            "unknown",
+            "proposed",
+            "requested",
+            "approved",
+            "implemented"
+          ]
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "quote": {
+          "type": "string",
+          "minLength": 1
+        },
+        "basis": {
+          "enum": [
+            "explicit",
+            "inferred"
+          ]
+        },
+        "verification": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "source_id",
+        "source_timestamp",
+        "kind",
+        "summary",
+        "quote",
+        "basis",
+        "verification"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "type": "array",
+  "items": {
+    "$ref": "#/$defs/source"
+  },
+  "minItems": 0
+}

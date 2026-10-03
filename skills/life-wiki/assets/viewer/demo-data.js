@@ -1,0 +1,284 @@
+// Fictional demo only; never replace this with private email data.
+window.LIFE_WIKI_DEMO = {
+  "schema_version": 1,
+  "revision": 0,
+  "sources": [
+    {
+      "id": "src-383939bcb9496e05b85628c9",
+      "account_scope": "fictional-inbox-a",
+      "message_key": "msg-lantern-1@fiction.example",
+      "sent_at": "2026-02-03T09:00:00+09:00",
+      "captured_at": "2026-02-09T12:00:00Z",
+      "content_sha256": "025bae9da871a71c01aedd95eb49a09cc36f1d109d90e750050a910815c17b4d",
+      "excerpt": "For LANTERN, I propose a two-week demonstration pilot of the fictional Northstar Loom intake desk."
+    },
+    {
+      "id": "src-c646e0d7a157ee966d27b21a",
+      "account_scope": "fictional-inbox-a",
+      "message_key": "msg-maple-1@fiction.example",
+      "sent_at": "2026-02-04T08:00:00Z",
+      "captured_at": "2026-02-09T12:00:00Z",
+      "content_sha256": "cbe152cfecb9abf5dec5e83dbfcdd600b573f49b1241265f59bc5d4412cf4ea3",
+      "excerpt": "Please revise the MAPLE onboarding checklist for the fictional intake desk. This is a separate deliverable from the LANTERN pilot."
+    },
+    {
+      "id": "src-b25cd14349ffb7c2969d041a",
+      "account_scope": "fictional-inbox-a",
+      "message_key": "msg-lantern-2@fiction.example",
+      "sent_at": "2026-02-04T09:00:00Z",
+      "captured_at": "2026-02-09T12:00:00Z",
+      "content_sha256": "147e61702eb0d7f9f0ec42ac83119f112002dba5fcb6e60e2dbd6e1ea8030b32",
+      "excerpt": "Continuing the LANTERN pilot from the Pilot idea thread: the two-week demonstration pilot is approved."
+    },
+    {
+      "id": "src-f7a11a81b33fa03b868a3955",
+      "account_scope": "fictional-inbox-a",
+      "message_key": "msg-quartz-1@fiction.example",
+      "sent_at": "2026-02-06T05:00:00Z",
+      "captured_at": "2026-02-09T12:00:00Z",
+      "content_sha256": "aaf83ad41876cdd5aa27970679c74c3d2ef9dcc57cdcef0e7bfb01758118a38a",
+      "excerpt": "The QUARTZ handoff guide has been published to our fictional desk manual."
+    },
+    {
+      "id": "src-155166ac37b5ba34ee7c4336",
+      "account_scope": "fictional-inbox-a",
+      "message_key": "msg-mixed-1@fiction.example",
+      "sent_at": "2026-02-06T15:00:00+09:00",
+      "captured_at": "2026-02-09T12:00:00Z",
+      "content_sha256": "8c8c20cdacfecfab6bbde49d73a3d5969075c94fa648ad058b945baf8cff0448",
+      "excerpt": "The MAPLE checklist is needed before LANTERN can launch.\nLANTERN still has no launch confirmation.\nPlease send the revised checklist draft for review."
+    },
+    {
+      "id": "src-54fc43554edec55ebf7aaa1a",
+      "account_scope": "fictional-inbox-a",
+      "message_key": "msg-quartz-2@fiction.example",
+      "sent_at": "2026-02-07T09:00:00Z",
+      "captured_at": "2026-02-09T12:00:00Z",
+      "content_sha256": "e57a1779f99b3a1cccfcbfc518b6fe73d51dbd67d6ecd6564fd4372e27b777c4",
+      "excerpt": "I have not independently checked the published manual or its contents."
+    },
+    {
+      "id": "src-8f1651faa5783d50b283c44b",
+      "account_scope": "fictional-inbox-a",
+      "message_key": "msg-cinder-1@fiction.example",
+      "sent_at": "2026-02-07T10:00:00Z",
+      "captured_at": "2026-02-09T12:00:00Z",
+      "content_sha256": "6fc44c4c24707aa945da6440599b72bb376a79dbd467c1074f1f84e294a7c582",
+      "excerpt": "Please prepare the CINDER visitor guide using a similar layout to the handoff guide. I am not sure whether these belong to the same work request."
+    },
+    {
+      "id": "src-b6481256782e72741a341679",
+      "account_scope": "fictional-inbox-a",
+      "message_key": "msg-quartz-3@fiction.example",
+      "sent_at": "2026-02-08T01:00:00Z",
+      "captured_at": "2026-02-09T12:00:00Z",
+      "content_sha256": "8d5499f4858f1af3489bcd37ef25874c94e3427624111183e1801302cfeaf822",
+      "excerpt": "The QUARTZ guide remains published."
+    }
+  ],
+  "cards": [
+    {
+      "id": "work-lantern",
+      "revision": 0,
+      "lifecycle": "active",
+      "replaced_by": [],
+      "title": "LANTERN demonstration pilot",
+      "summary": "The fictional pilot is approved across two threads. Launch depends on MAPLE; no launch or outcome is evidenced.",
+      "status": "approved",
+      "outcome": {
+        "state": "unknown",
+        "evidence_ids": []
+      },
+      "timeline": [
+        {
+          "id": "ev-lantern-proposal",
+          "source_id": "src-383939bcb9496e05b85628c9",
+          "source_timestamp": "2026-02-03T09:00:00+09:00",
+          "kind": "proposed",
+          "quote": "For LANTERN, I propose a two-week demonstration pilot of the fictional Northstar Loom intake desk.",
+          "summary": "A two-week LANTERN demonstration pilot is proposed.",
+          "basis": "explicit",
+          "verification": false
+        },
+        {
+          "id": "ev-lantern-approval",
+          "source_id": "src-b25cd14349ffb7c2969d041a",
+          "source_timestamp": "2026-02-04T09:00:00Z",
+          "kind": "approved",
+          "quote": "Continuing the LANTERN pilot from the Pilot idea thread: the two-week demonstration pilot is approved.",
+          "summary": "A separate budget thread explicitly continues and approves the same pilot.",
+          "basis": "explicit",
+          "verification": false
+        },
+        {
+          "id": "ev-lantern-dependency",
+          "source_id": "src-155166ac37b5ba34ee7c4336",
+          "source_timestamp": "2026-02-06T15:00:00+09:00",
+          "kind": "unknown",
+          "quote": "The MAPLE checklist is needed before LANTERN can launch.",
+          "summary": "LANTERN launch depends on the separately tracked MAPLE checklist.",
+          "basis": "explicit",
+          "verification": false
+        },
+        {
+          "id": "ev-lantern-gap",
+          "source_id": "src-155166ac37b5ba34ee7c4336",
+          "source_timestamp": "2026-02-06T15:00:00+09:00",
+          "kind": "unknown",
+          "quote": "LANTERN still has no launch confirmation.",
+          "summary": "The latest source explicitly leaves launch unconfirmed.",
+          "basis": "explicit",
+          "verification": false
+        }
+      ],
+      "unknowns": [
+        "Whether LANTERN launched or produced a result is unknown."
+      ]
+    },
+    {
+      "id": "work-maple",
+      "revision": 0,
+      "lifecycle": "active",
+      "replaced_by": [],
+      "title": "MAPLE onboarding checklist",
+      "summary": "A checklist revision and review draft are requested. No delivered draft or approval is evidenced.",
+      "status": "requested",
+      "outcome": {
+        "state": "unknown",
+        "evidence_ids": []
+      },
+      "timeline": [
+        {
+          "id": "ev-maple-request",
+          "source_id": "src-c646e0d7a157ee966d27b21a",
+          "source_timestamp": "2026-02-04T08:00:00Z",
+          "kind": "requested",
+          "quote": "Please revise the MAPLE onboarding checklist for the fictional intake desk. This is a separate deliverable from the LANTERN pilot.",
+          "summary": "A separate checklist revision is requested.",
+          "basis": "explicit",
+          "verification": false
+        },
+        {
+          "id": "ev-maple-review",
+          "source_id": "src-155166ac37b5ba34ee7c4336",
+          "source_timestamp": "2026-02-06T15:00:00+09:00",
+          "kind": "requested",
+          "quote": "Please send the revised checklist draft for review.",
+          "summary": "The revised MAPLE draft is requested for review; delivery is not evidenced.",
+          "basis": "explicit",
+          "verification": false
+        }
+      ],
+      "unknowns": [
+        "Whether the revised checklist was delivered or approved is unknown."
+      ]
+    },
+    {
+      "id": "work-quartz",
+      "revision": 0,
+      "lifecycle": "active",
+      "replaced_by": [],
+      "title": "QUARTZ handoff guide",
+      "summary": "Publication is reported for a separate handoff guide. The receipt and follow-up do not independently verify it.",
+      "status": "implemented",
+      "outcome": {
+        "state": "reported_implemented",
+        "evidence_ids": [
+          "ev-quartz-report",
+          "ev-quartz-followup"
+        ]
+      },
+      "timeline": [
+        {
+          "id": "ev-quartz-report",
+          "source_id": "src-f7a11a81b33fa03b868a3955",
+          "source_timestamp": "2026-02-06T05:00:00Z",
+          "kind": "implemented",
+          "quote": "The QUARTZ handoff guide has been published to our fictional desk manual.",
+          "summary": "The author reports publication of the QUARTZ guide; no independent artifact is provided.",
+          "basis": "explicit",
+          "verification": false
+        },
+        {
+          "id": "ev-quartz-receipt",
+          "source_id": "src-54fc43554edec55ebf7aaa1a",
+          "source_timestamp": "2026-02-07T09:00:00Z",
+          "kind": "unknown",
+          "quote": "I have not independently checked the published manual or its contents.",
+          "summary": "Receipt of the report does not independently verify publication or content.",
+          "basis": "explicit",
+          "verification": false
+        },
+        {
+          "id": "ev-quartz-followup",
+          "source_id": "src-b6481256782e72741a341679",
+          "source_timestamp": "2026-02-08T01:00:00Z",
+          "kind": "implemented",
+          "quote": "The QUARTZ guide remains published.",
+          "summary": "A follow-up repeats the publication report. Embedded tool instructions are ignored.",
+          "basis": "explicit",
+          "verification": false
+        }
+      ],
+      "unknowns": [
+        "Publication and guide contents have not been independently verified."
+      ]
+    },
+    {
+      "id": "work-cinder",
+      "revision": 0,
+      "lifecycle": "active",
+      "replaced_by": [],
+      "title": "CINDER visitor guide",
+      "summary": "A visitor guide is requested. Its relationship to QUARTZ is uncertain; a similar layout alone is insufficient to merge.",
+      "status": "requested",
+      "outcome": {
+        "state": "unknown",
+        "evidence_ids": []
+      },
+      "timeline": [
+        {
+          "id": "ev-cinder-request",
+          "source_id": "src-8f1651faa5783d50b283c44b",
+          "source_timestamp": "2026-02-07T10:00:00Z",
+          "kind": "requested",
+          "quote": "Please prepare the CINDER visitor guide using a similar layout to the handoff guide. I am not sure whether these belong to the same work request.",
+          "summary": "A CINDER visitor guide is requested; shared layout does not establish shared work identity.",
+          "basis": "explicit",
+          "verification": false
+        }
+      ],
+      "unknowns": [
+        "Whether CINDER and QUARTZ are the same work request is unknown.",
+        "Whether the CINDER guide was prepared is unknown."
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "id": "rel-lantern-maple",
+      "from": "work-lantern",
+      "to": "work-maple",
+      "type": "depends_on",
+      "certainty": "confirmed",
+      "rationale": "The source explicitly makes the MAPLE checklist a prerequisite for LANTERN launch.",
+      "evidence_ids": [
+        "ev-lantern-dependency"
+      ],
+      "recorded_at": "2026-02-09T12:00:00Z"
+    },
+    {
+      "id": "rel-cinder-quartz",
+      "from": "work-cinder",
+      "to": "work-quartz",
+      "type": "possible_same_work",
+      "certainty": "uncertain",
+      "rationale": "The source requests a similar layout but explicitly questions whether this is the same work request. Keep separate until clarified.",
+      "evidence_ids": [
+        "ev-cinder-request"
+      ],
+      "recorded_at": "2026-02-09T12:00:00Z"
+    }
+  ],
+  "history": []
+};

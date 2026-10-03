@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://life-wiki.invalid/schemas/wiki.schema.json",
+  "$defs": {
+    "state": {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sources": {
+          "$ref": "provenance.schema.json"
+        },
+        "cards": {
+          "type": "array",
+          "items": {
+            "$ref": "card.schema.json"
+          },
+          "minItems": 0
+        },
+        "relations": {
+          "$ref": "relations.schema.json"
+        }
+      },
+      "required": [
+        "schema_version",
+        "revision",
+        "sources",
+        "cards",
+        "relations"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "sources": {
+      "$ref": "provenance.schema.json"
+    },
+    "cards": {
+      "type": "array",
+      "items": {
+        "$ref": "card.schema.json"
+      },
+      "minItems": 0
+    },
+    "relations": {
+      "$ref": "relations.schema.json"
+    },
+    "history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "operation_id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,79}$(?![\\s\\S])"
+          },
+          "request_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$(?![\\s\\S])"
+          },
+          "action": {
+            "enum": [
+              "revise",
+              "merge",
+              "split",
+              "undo"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          },
+          "recorded_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "base_revision": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "result_revision": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "before": {
+            "$ref": "#/$defs/state"
+          },
+          "after": {
+            "$ref": "#/$defs/state"
+          },
+          "before_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$(?![\\s\\S])"
+          },
+          "after_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$(?![\\s\\S])"
+          }
+        },
+        "required": [
+          "operation_id",
+          "request_sha256",
+          "action",
+          "reason",
+          "recorded_at",
+          "base_revision",
+          "result_revision",
+          "before",
+          "after",
+          "before_sha256",
+          "after_sha256"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 0
+    }
+  },
+  "required": [
+    "schema_version",
+    "revision",
+    "sources",
+    "cards",
+    "relations",
+    "history"
+  ],
+  "additionalProperties": false
+}
