@@ -11,9 +11,9 @@ The repository is named `Life-wiki`, the display name is **LIFE wiki**, and the 
 
 ## Example interface
 
-![Earlier LIFE wiki connection map with the personal name and actual record titles hidden](docs/images/life-wiki-knowledge-universe-public.png)
+![LIFE wiki work and everyday life connection map with personal names and actual topic titles hidden](docs/images/life-wiki-connection-map-public.png)
 
-This is an earlier connection-map view of a separately configured private LIFE wiki. The current wording is “My records” and “Work and everyday life connection map”; the screenshot retains the earlier labels. The public screenshot uses opaque masks over the original personal name, actual work titles, update timestamp, personal automatic update setting, and record counts, while preserving the graph and screen layout. It differs from the default static viewer in this repository. It does not mean the package includes 3D exploration, email collection, or automatic updates.
+This public copy uses AI image editing to conceal private content in the user's new LIFE wiki screenshot. It is not a pixel-preserving copy of the original capture. It masks the personal name, actual topic titles, update timestamp, personal automatic-update notice, record counts, and edit control. The image illustrates a separately configured private web service and differs from the package's default static viewer. The pictured 3D exploration, durable storage, and automatic updates are not included in this package.
 
 ## If installation is difficult, just use this prompt
 
