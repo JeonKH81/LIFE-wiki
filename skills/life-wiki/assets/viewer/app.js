@@ -64,6 +64,33 @@ function element(tag, value, className) {
 function mount() {
   const $=id=>document.getElementById(id);
   let wiki=null,selected=null;
+  const graph=mountGraph($("graph-canvas"),id=>{showCard(id);});
+  function showView(view) {
+    for(const name of ["map","records","operations","decisions","topics","people","references"]){$("view-"+name).hidden=name!==view;$("nav-"+name).setAttribute("aria-pressed",String(name===view));}
+    $(view==="map"?"map-detail":"records-detail").append($("detail"));
+    if(wiki)renderList();
+  }
+  function renderEvidenceViews() {
+    for(const name of ["decisions","topics","people","references"]){$(name+"-content").replaceChildren();}
+    if(!wiki){for(const name of ["decisions","topics","people","references"])$(name+"-content").append(element("p","wiki.json을 먼저 여세요."));return;}
+    function cardButton(c){const button=element("button",c.title,"record-link");button.type="button";button.addEventListener("click",()=>{showView("records");showCard(c.id);});return button;}
+    const decisions=$("decisions-content");let count=0;
+    for(const c of wiki.cards)for(const e of c.timeline.filter(e=>["approved","implemented"].includes(e.kind))){count++;const row=element("section",undefined,"operation-row");row.append(cardButton(c),element("p",`${labels[e.kind]} · ${e.verification?"독립 확인":"독립 확인 아님"} · ${e.source_timestamp}`),element("p",e.summary),element("blockquote",e.quote),element("small",`${e.id} · ${e.source_id}`,"evidence"));decisions.append(row);}
+    if(!count)decisions.append(element("p","승인·실행 근거가 기록되지 않았습니다."));
+    const topics=$("topics-content");topics.append(element("p","현재 공개 형식의 카드 제목을 주제로 표시합니다. 별도 분야나 주제 분류를 자동으로 만들지 않습니다."));
+    for(const c of wiki.cards){const row=element("section",undefined,"operation-row");row.append(cardButton(c),element("p",c.summary));topics.append(row);}
+    const people=$("people-content");people.append(element("p","현재 공개 JSON 형식에는 구조화된 사람·역할 필드가 없습니다. 아래 원문 근거를 확인할 수 있지만, 발신자나 담당자를 추정하여 인물 목록을 만들지 않습니다."));
+    for(const c of wiki.cards){const row=element("section",undefined,"operation-row");row.append(cardButton(c),element("p","사람·역할을 확인할 원문 근거"));for(const e of c.timeline)row.append(element("blockquote",e.quote),element("small",e.source_id,"evidence"));people.append(row);}
+    const references=$("references-content");
+    for(const source of wiki.sources){const row=element("section",undefined,"operation-row");row.append(element("strong",source.id),element("time",source.sent_at),element("blockquote",source.excerpt));if(source.uri)row.append(element("p",`출처 위치: ${source.uri}`));for(const c of wiki.cards.filter(c=>c.timeline.some(e=>e.source_id===source.id)))row.append(cardButton(c));references.append(row);}
+  }
+  function renderOperations() {
+    const target=$("operation-list");target.replaceChildren();
+    $("operation-summary").textContent=wiki?`판본 ${wiki.revision} · 기록 ${wiki.cards.length}개 · 출처 ${wiki.sources.length}개 · 연결 ${wiki.relations.length}개` : "wiki.json을 먼저 여세요.";
+    if(!wiki)return;
+    if(!wiki.history.length)target.append(element("p","최초 기록 · 저장된 운영 변경이 없습니다."));
+    for(const h of [...wiki.history].reverse()){const row=element("section",undefined,"operation-row");row.append(element("strong",`${h.action} · ${h.operation_id}`),element("time",h.recorded_at),element("p",h.reason));target.append(row);}
+  }
   function notice(value){$("notice").textContent=value;}
   function showCard(id) {
     const c=wiki.cards.find(x=>x.id===id); if(!c)return;
@@ -101,20 +128,33 @@ function mount() {
     const list=$("list");list.replaceChildren();if(!wiki)return;
     const cards=wiki.cards.filter(c=>($("archive").checked||c.lifecycle==="active")&&(!$("status").value||c.status===$("status").value)&&searchable(c,wiki,$("search").value));
     $("count").textContent=`${cards.length}개 기록 · 전체 판본 ${wiki.revision}`;
+    graph.update(graphModel(wiki,cards),selected);
+    const alternatives=$("graph-records");alternatives.replaceChildren();
+    for(const c of cards){const button=element("button",c.title);button.type="button";button.setAttribute("aria-pressed",String(c.id===selected));button.addEventListener("click",()=>showCard(c.id));alternatives.append(button);}
+    const connections=$("graph-connections");connections.replaceChildren();
+    for(const r of graphModel(wiki,cards).edges){const titles=id=>wiki.cards.find(c=>c.id===id).title;connections.append(element("li",`${titles(r.from)} → ${titles(r.to)} · ${labels[r.type]} · ${labels[r.certainty]} · ${r.rationale}`));}
+    if(!connections.children.length)connections.append(element("li","표시 중인 기록 사이에 저장된 연결이 없습니다."));
     for(const c of cards){const button=element("button");button.type="button";button.className=c.id===selected?"selected":"";button.setAttribute("aria-pressed",String(c.id===selected));button.append(element("strong",c.title),element("small",`${labels[c.status]} · 결과 ${labels[c.outcome.state]}`));button.addEventListener("click",()=>showCard(c.id));list.append(button);}
     if(!cards.length)list.append(element("p","검색에 맞는 기록이 없습니다. 검색어나 상태를 바꿔 보세요."));
   }
   function load(value,name) {
     wiki=checkWiki(value);selected=null;$("search").value="";$("status").value="";$("archive").checked=false;renderList();
     const first=wiki.cards.find(c=>c.lifecycle==="active");if(first)showCard(first.id);else $("detail").replaceChildren(element("p","현재 카드가 없습니다. 이전 카드를 포함해서 살펴보세요."));
-    notice(`${name} · 이 화면은 읽기 전용입니다. 의미와 근거의 전체 검사는 wiki.py validate로 확인하세요.`);
+    renderOperations();renderEvidenceViews();notice(`${name} · 이 화면은 읽기 전용입니다. 의미와 근거의 전체 검사는 wiki.py validate로 확인하세요.`);
   }
-  $("demo").addEventListener("click",()=>{try{load(window.LIFE_WIKI_DEMO,"가상 예제");}catch{notice("가상 예제를 읽을 수 없습니다. 패키지의 demo-data.js를 확인하세요.");}});
+  const demoButton=$("demo");
+  if(demoButton)demoButton.addEventListener("click",()=>{try{load(window.LIFE_WIKI_DEMO,"가상 예제");}catch{notice("가상 예제를 읽을 수 없습니다. 패키지의 demo-data.js를 확인하세요.");}});
   $("file").addEventListener("change",async event=>{
     const file=event.target.files[0];if(!file)return;
     try {if(file.size>8*1024*1024)throw new Error("파일이 8MB를 넘습니다. 선택한 기록만 새로 내보내세요.");load(JSON.parse(await file.text()),"선택한 파일");}
     catch(error){notice(`열 수 없습니다. ${error instanceof SyntaxError?"JSON 형식을 확인하세요.":error.message}`);}finally{event.target.value="";}
   });
+  for(const name of ["map","records","operations","decisions","topics","people","references"])$("nav-"+name).addEventListener("click",()=>showView(name));
+  $("graph-reset").addEventListener("click",()=>graph.reset());
+  $("graph-zoom-in").addEventListener("click",()=>graph.zoom(1.2));
+  $("graph-zoom-out").addEventListener("click",()=>graph.zoom(1/1.2));
+  showView("map");renderOperations();renderEvidenceViews();
+  if(window.LIFE_WIKI_INITIAL){try{load(window.LIFE_WIKI_INITIAL,"저장된 기록");}catch{notice("저장된 기록을 읽을 수 없습니다. Codex에 이 화면 폴더의 검증을 요청하세요.");}}
   $("search").addEventListener("input",renderList);$("status").addEventListener("change",renderList);$("archive").addEventListener("change",renderList);
 }
 if(typeof document!=="undefined") document.addEventListener("DOMContentLoaded",mount);

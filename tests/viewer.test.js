@@ -26,11 +26,18 @@ class Node {
   setAttribute(key,value){assert(!["src","href"].includes(key));this[key]=value;}
   set innerHTML(value){throw Error("HTML interpretation forbidden");}
 }
-const ids={};for(const id of ["notice","list","detail","search","status","archive","demo","file","count"])ids[id]=new Node(id);
+const ids={};for(const id of ["notice","list","detail","search","status","archive","demo","file","count","graph-canvas","graph-records","graph-connections","graph-reset","graph-zoom-in","graph-zoom-out","operation-list","operation-summary","nav-map","nav-records","nav-operations","view-map","view-records","view-operations","map-detail","records-detail","nav-decisions","nav-topics","nav-people","nav-references","view-decisions","view-topics","view-people","view-references","decisions-content","topics-content","people-content","references-content"])ids[id]=new Node(id);
 const document={getElementById:id=>ids[id],createElement:tag=>new Node(tag),addEventListener:(event,fn)=>{assert.equal(event,"DOMContentLoaded");document.ready=fn;}};
-const context={document,window:{LIFE_WIKI_DEMO:wiki},console};vm.createContext(context);vm.runInContext(app,context);document.ready();
-ids.demo.events.click();assert.equal(ids.list.children.length,4);assert.equal(ids.detail.children[1].textContent,"LANTERN demonstration pilot");
-ids.search.value="CINDER";ids.search.events.input();assert.equal(ids.list.children.length,1);ids.list.children[0].events.click();assert.equal(ids.detail.children[1].textContent,"CINDER visitor guide");
+const context={document,window:{LIFE_WIKI_DEMO:wiki},console};vm.createContext(context);vm.runInContext(fs.readFileSync(path.join(root,"skills/life-wiki/assets/viewer/graph.js"),"utf8"),context);vm.runInContext(app,context);document.ready();
+ids.demo.events.click();assert.equal(ids.list.children.length,4);
+assert.equal(ids["graph-records"].children.length,4);assert.equal(ids["graph-connections"].children.length,2);
+assert.equal(ids["view-map"].hidden,false);ids["nav-records"].events.click();assert.equal(ids["view-map"].hidden,true);assert.equal(ids["view-records"].hidden,false);
+ids["nav-operations"].events.click();assert.equal(ids["view-operations"].hidden,false);assert(ids["operation-summary"].textContent.includes("판본 0"));
+assert.equal(ids["operation-list"].children[0].textContent,"최초 기록 · 저장된 운영 변경이 없습니다.");ids["nav-map"].events.click();
+assert.equal(ids["references-content"].children.length,wiki.sources.length);
+assert(ids["people-content"].children[0].textContent.includes("사람·역할 필드가 없습니다"));
+for(const name of ["decisions","topics","people","references"]){ids["nav-"+name].events.click();assert.equal(ids["view-"+name].hidden,false);assert.equal(ids["view-map"].hidden,true);}ids["nav-map"].events.click();assert.equal(ids.detail.children[1].textContent,"LANTERN demonstration pilot");
+ids.search.value="CINDER";ids.search.events.input();assert.equal(ids.list.children.length,1);assert.equal(ids["graph-records"].children.length,1);assert.equal(ids["graph-connections"].children.length,1);assert(ids["graph-connections"].children[0].textContent.includes("연결이 없습니다"));ids.list.children[0].events.click();assert.equal(ids.detail.children[1].textContent,"CINDER visitor guide");
 ids.search.value="";ids.status.value="approved";ids.status.events.change();assert.equal(ids.list.children.length,1);
 const demoContext={window:{}};vm.createContext(demoContext);vm.runInContext(fs.readFileSync(path.join(root,"skills/life-wiki/assets/viewer/demo-data.js"),"utf8"),demoContext);
 context.window.LIFE_WIKI_DEMO=demoContext.window.LIFE_WIKI_DEMO;ids.demo.events.click();assert.equal(ids.list.children.length,6);assert(ids.count.textContent.includes("6개 기록"));
@@ -42,5 +49,12 @@ assert(!ids.detail.children.some(n=>n.tag==="img"));
 (async()=>{
  ids.file.files=[{size:20,text:async()=>JSON.stringify(wiki)}];await ids.file.events.change({target:ids.file});assert.equal(ids.list.children.length,4);
  ids.file.files=[{size:9*1024*1024,text:async()=>{throw Error("Should not read oversized file");}}];await ids.file.events.change({target:ids.file});assert(ids.notice.textContent.includes("8MB"));
- console.log("Viewer: list, search, status, selected card, local import, size limit, and inert HTML checks passed.");
+ delete ids.demo;
+ context.window.LIFE_WIKI_INITIAL=wiki;document.ready();
+ assert(ids.count.textContent.includes("4개 기록"));assert.equal(ids.detail.children[1].textContent,"LANTERN demonstration pilot");
+ context.window.LIFE_WIKI_INITIAL={invalid:true};document.ready();assert(ids.notice.textContent.includes("저장된 기록을 읽을 수 없습니다"));
+ context.window.LIFE_WIKI_INITIAL=null;document.ready();
+ ids.file.files=[{size:100,text:async()=>JSON.stringify({schema_version:1,revision:0,cards:[],sources:[],relations:[],history:[]})}];await ids.file.events.change({target:ids.file});
+ assert(ids.count.textContent.includes("0개 기록"));assert(ids.detail.children[0].textContent.includes("현재 카드가 없습니다"));
+ console.log("Viewer: menus, graph alternatives, list, search, status, selected card, local import, size limit, and inert HTML checks passed.");
 })().catch(e=>{console.error(e);process.exitCode=1;});

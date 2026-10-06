@@ -656,6 +656,12 @@ def render(wiki, destination):
         shutil.copytree(SKILL_ROOT / "assets" / "viewer", staging, dirs_exist_ok=True)
         staging.chmod(0o700)
         write_new_json(staging / "wiki.json", wiki)
+        # External script avoids file:// fetch and keeps the exported snapshot local.
+        # Escape script-sensitive characters even though the script is not inline.
+        encoded = json.dumps(wiki, ensure_ascii=True).replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
+        initial = staging / "initial-data.js"
+        initial.write_text("\"use strict\";\nwindow.LIFE_WIKI_INITIAL = " + encoded + ";\n", encoding="utf-8")
+        initial.chmod(0o600)
         (staging / "cards").mkdir(mode=0o700)
         for card in wiki["cards"]:
             path = staging / "cards" / (card["id"] + ".md")
@@ -706,7 +712,7 @@ def main():
                 print(f"Normalized {len(sources)} unique sources; minimize excerpts before durable use.")
             else:
                 render(value, args.out)
-                print("Export created. Open index.html and select the exported wiki.json.")
+                print("Export created. Open index.html; the exported records load automatically.")
     except (WikiError, OSError) as exc:
         if isinstance(exc, WikiError):
             print(str(exc), file=sys.stderr)

@@ -7,13 +7,24 @@
   <title>LIFE wiki · 업무와 일상의 흐름</title>
   <link rel="stylesheet" href="style.css">
   <script defer src="demo-data.js"></script>
+  <script defer src="initial-data.js"></script>
+  <script defer src="graph.js"></script>
   <script defer src="app.js"></script>
 </head>
 <body>
   <header>
     <div><span class="brand">LIFE <span>wiki</span></span><p>이메일에 흩어진 업무와 일상의 흐름을 연결하다</p></div>
-    <div class="load"><button id="demo" type="button">가상 예제 보기</button><label class="file">내 wiki.json 열기<input id="file" type="file" accept=".json,application/json"></label><small>선택한 파일은 이 화면에서만 읽습니다.</small></div>
+    <div class="load"><button id="demo" type="button">가상 예제 보기</button><label class="file">다른 기록 파일 열기<input id="file" type="file" accept=".json,application/json"></label><small>선택한 파일은 이 화면에서만 읽습니다.</small></div>
   </header>
+  <nav class="primary-nav" aria-label="주요 메뉴">
+    <button id="nav-map" type="button" aria-pressed="true">연결 지도</button>
+    <button id="nav-records" type="button" aria-pressed="false">내 기록</button>
+    <button id="nav-operations" type="button" aria-pressed="false">운영 변경</button>
+    <button id="nav-decisions" type="button" aria-pressed="false">결정과 근거</button>
+    <button id="nav-topics" type="button" aria-pressed="false">주제별 기록</button>
+    <button id="nav-people" type="button" aria-pressed="false">사람과 역할</button>
+    <button id="nav-references" type="button" aria-pressed="false">참고 기록</button>
+  </nav>
   <p id="notice" role="status" aria-live="polite">가상 예제를 보거나, 내보낸 wiki.json을 선택하세요.</p>
   <main>
     <aside aria-label="내 기록 목록">
@@ -22,7 +33,22 @@
       <label class="archive"><input id="archive" type="checkbox"> 합쳐지거나 나뉜 이전 카드 포함</label>
       <p id="count"></p><nav id="list" aria-label="기록 선택"></nav>
     </aside>
+    <div class="views">
+    <section id="view-map" aria-label="연결지도">
+      <div class="graph-heading"><div><span class="eyebrow">LINKED INSIGHTS FROM EMAIL</span><h1>업무와 일상의 연결 지도</h1><p>저장된 근거로 연결된 기록을 탐색합니다.</p></div><div class="graph-controls"><button id="graph-zoom-in" type="button" aria-label="지도 확대">+</button><button id="graph-zoom-out" type="button" aria-label="지도 축소">−</button><button id="graph-reset" type="button">시점 초기화</button></div></div>
+      <canvas id="graph-canvas" tabindex="0" role="img" aria-label="기록 노드와 관계 연결지도. 방향키로 회전, +와 -로 확대와 축소, Home으로 초기화. 아래 기록 버튼으로 상세 내용을 선택할 수 있습니다."></canvas>
+      <p class="graph-help">드래그로 회전 · 스크롤로 확대/축소 · 노드를 누르면 상세 기록<br>실선: 근거 확인 · 점선: 불확실한 연결 · 위치와 거리는 의미를 나타내지 않습니다.</p>
+      <details class="graph-access"><summary>전체 기록 보기 · 연결 목록</summary><div id="graph-records"></div><ul id="graph-connections"></ul></details>
+      <div id="map-detail"></div>
+    </section>
+    <section id="view-records" aria-label="내 기록" hidden><div id="records-detail"></div></section>
+    <section id="view-operations" aria-label="운영 변경" hidden><article><div class="eyebrow">LOCAL RECORD HISTORY</div><h1>운영 변경</h1><p id="operation-summary"></p><p>불러온 wiki.json에 저장된 변경 이력입니다. 이 화면은 읽기 전용이며 메일 연결·자동 갱신·배포 설정을 변경하지 않습니다.</p><div id="operation-list"></div></article></section>
+    <section id="view-decisions" aria-label="결정과 근거" hidden><article><div class="eyebrow">DECISIONS &amp; EVIDENCE</div><h1>결정과 근거</h1><p>승인과 실제 실행을 구분하고 원문을 함께 확인합니다.</p><div id="decisions-content"></div></article></section>
+    <section id="view-topics" aria-label="주제별 기록" hidden><article><div class="eyebrow">TOPIC RECORDS</div><h1>주제별 기록</h1><div id="topics-content"></div></article></section>
+    <section id="view-people" aria-label="사람과 역할" hidden><article><div class="eyebrow">PEOPLE &amp; ROLES</div><h1>사람과 역할</h1><div id="people-content"></div></article></section>
+    <section id="view-references" aria-label="참고 기록" hidden><article><div class="eyebrow">SOURCE RECORDS</div><h1>참고 기록</h1><p>현재 wiki.json에 저장된 출처 발췌입니다. 메일함을 추가로 읽지 않습니다.</p><div id="references-content"></div></article></section>
     <article id="detail" aria-label="업무와 일상 카드"><div class="empty"><h1>업무와 일상, 하나의 기록으로.</h1><p>제안부터 현재까지, 근거를 따라 읽으세요.<br>승인이나 예약 확인만으로 실제 실행을 단정하지 않습니다.</p></div></article>
+  </div>
   </main>
   <footer>출처가 말해 주는 범위까지 기록합니다. 불확실한 연결과 결과는 그대로 보입니다.</footer>
 </body>
