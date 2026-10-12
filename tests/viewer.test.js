@@ -26,11 +26,21 @@ class Node {
   setAttribute(key,value){assert(!["src","href"].includes(key));this[key]=value;}
   set innerHTML(value){throw Error("HTML interpretation forbidden");}
 }
-const ids={};for(const id of ["notice","list","detail","search","status","archive","demo","file","count","graph-canvas","graph-records","graph-connections","graph-reset","graph-zoom-in","graph-zoom-out","operation-list","operation-summary","nav-map","nav-records","nav-operations","view-map","view-records","view-operations","map-detail","records-detail","nav-decisions","nav-topics","nav-people","nav-references","view-decisions","view-topics","view-people","view-references","decisions-content","topics-content","people-content","references-content"])ids[id]=new Node(id);
+const ids={};for(const id of ["notice","list","detail","search","status","archive","demo","file","count","graph-canvas","graph-records","graph-connections","graph-reset","graph-overview","graph-expand","graph-zoom-in","graph-zoom-out","operation-list","operation-summary","nav-map","nav-records","nav-operations","view-map","view-records","view-operations","map-detail","records-detail","nav-decisions","nav-topics","nav-people","nav-references","view-decisions","view-topics","view-people","view-references","decisions-content","topics-content","people-content","references-content"])ids[id]=new Node(id);
 const document={getElementById:id=>ids[id],createElement:tag=>new Node(tag),addEventListener:(event,fn)=>{assert.equal(event,"DOMContentLoaded");document.ready=fn;}};
 const context={document,window:{LIFE_WIKI_DEMO:wiki},console};vm.createContext(context);vm.runInContext(fs.readFileSync(path.join(root,"skills/life-wiki/assets/viewer/graph.js"),"utf8"),context);vm.runInContext(app,context);document.ready();
 ids.demo.events.click();assert.equal(ids.list.children.length,4);
 assert.equal(ids["graph-records"].children.length,4);assert.equal(ids["graph-connections"].children.length,2);
+assert.equal(ids["graph-expand"].disabled,true);
+const snapshotBefore=JSON.stringify(wiki);
+assert(ids["graph-records"].children.every(n=>n.className==="topic-label"));
+ids["graph-records"].children[0].events.click();
+assert.equal(ids["graph-expand"].disabled,false);assert.equal(ids["graph-records"].children.length,4);
+assert.equal(ids["graph-expand"]["aria-pressed"],"false");
+ids["graph-expand"].events.click();assert.equal(ids["graph-expand"]["aria-pressed"],"true");
+assert(ids["graph-records"].children.every(n=>n.className!=="topic-label"));
+ids["graph-overview"].events.click();assert.equal(ids["graph-expand"].disabled,true);
+assert.equal(ids["graph-records"].children.length,4);assert.equal(JSON.stringify(wiki),snapshotBefore);
 assert.equal(ids["view-map"].hidden,false);ids["nav-records"].events.click();assert.equal(ids["view-map"].hidden,true);assert.equal(ids["view-records"].hidden,false);
 ids["nav-operations"].events.click();assert.equal(ids["view-operations"].hidden,false);assert(ids["operation-summary"].textContent.includes("판본 0"));
 assert.equal(ids["operation-list"].children[0].textContent,"최초 기록 · 저장된 운영 변경이 없습니다.");ids["nav-map"].events.click();

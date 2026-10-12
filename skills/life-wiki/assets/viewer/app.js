@@ -63,8 +63,8 @@ function element(tag, value, className) {
 }
 function mount() {
   const $=id=>document.getElementById(id);
-  let wiki=null,selected=null;
-  const graph=mountGraph($("graph-canvas"),id=>{showCard(id);});
+  let wiki=null,selected=null,topicId=null,showRecords=false;
+  const graph=mountGraph($("graph-canvas"),id=>{if(id.startsWith("topic:")){selectTopic(id.slice(6));}else showCard(id);});
   function showView(view) {
     for(const name of ["map","records","operations","decisions","topics","people","references"]){$("view-"+name).hidden=name!==view;$("nav-"+name).setAttribute("aria-pressed",String(name===view));}
     $(view==="map"?"map-detail":"records-detail").append($("detail"));
@@ -124,21 +124,27 @@ function mount() {
     if(!wiki.history.length) provenance.append(element("p","최초 기록 · 판본 0"));
     detail.append(provenance);renderList();
   }
+  function selectTopic(id){topicId=id;showRecords=false;showCard(id);}
   function renderList() {
     const list=$("list");list.replaceChildren();if(!wiki)return;
     const cards=wiki.cards.filter(c=>($("archive").checked||c.lifecycle==="active")&&(!$("status").value||c.status===$("status").value)&&searchable(c,wiki,$("search").value));
     $("count").textContent=`${cards.length}개 기록 · 전체 판본 ${wiki.revision}`;
-    graph.update(graphModel(wiki,cards),selected);
+    if(!cards.some(c=>c.id===topicId)){topicId=null;showRecords=false;}
+    const model=mapModel(wiki,cards,topicId,showRecords);
+    graph.update(model,showRecords?selected:topicId?"topic:"+topicId:null);
+    $("graph-expand").disabled=!topicId;
+    $("graph-expand").setAttribute("aria-pressed",String(showRecords));
+    $("graph-expand").textContent=showRecords?"주제만 보기":"기록 펼치기";
     const alternatives=$("graph-records");alternatives.replaceChildren();
-    for(const c of cards){const button=element("button",c.title);button.type="button";button.setAttribute("aria-pressed",String(c.id===selected));button.addEventListener("click",()=>showCard(c.id));alternatives.append(button);}
+    for(const n of model.nodes){const button=element("button",n.title,n.kind==="topic"?"topic-label":"");button.type="button";button.setAttribute("aria-pressed",String(n.recordId===(showRecords?selected:topicId)));button.addEventListener("click",()=>{if(n.kind==="topic")selectTopic(n.recordId);else showCard(n.recordId);});alternatives.append(button);}
     const connections=$("graph-connections");connections.replaceChildren();
-    for(const r of graphModel(wiki,cards).edges){const titles=id=>wiki.cards.find(c=>c.id===id).title;connections.append(element("li",`${titles(r.from)} → ${titles(r.to)} · ${labels[r.type]} · ${labels[r.certainty]} · ${r.rationale}`));}
+    for(const r of graphModel(wiki,cards.filter(c=>model.nodes.some(n=>n.recordId===c.id))).edges){const titles=id=>wiki.cards.find(c=>c.id===id).title;connections.append(element("li",`${titles(r.from)} → ${titles(r.to)} · ${labels[r.type]} · ${labels[r.certainty]} · ${r.rationale}`));}
     if(!connections.children.length)connections.append(element("li","표시 중인 기록 사이에 저장된 연결이 없습니다."));
     for(const c of cards){const button=element("button");button.type="button";button.className=c.id===selected?"selected":"";button.setAttribute("aria-pressed",String(c.id===selected));button.append(element("strong",c.title),element("small",`${labels[c.status]} · 결과 ${labels[c.outcome.state]}`));button.addEventListener("click",()=>showCard(c.id));list.append(button);}
     if(!cards.length)list.append(element("p","검색에 맞는 기록이 없습니다. 검색어나 상태를 바꿔 보세요."));
   }
   function load(value,name) {
-    wiki=checkWiki(value);selected=null;$("search").value="";$("status").value="";$("archive").checked=false;renderList();
+    wiki=checkWiki(value);selected=null;topicId=null;showRecords=false;$("search").value="";$("status").value="";$("archive").checked=false;renderList();
     const first=wiki.cards.find(c=>c.lifecycle==="active");if(first)showCard(first.id);else $("detail").replaceChildren(element("p","현재 카드가 없습니다. 이전 카드를 포함해서 살펴보세요."));
     renderOperations();renderEvidenceViews();notice(`${name} · 이 화면은 읽기 전용입니다. 의미와 근거의 전체 검사는 wiki.py validate로 확인하세요.`);
   }
@@ -150,6 +156,8 @@ function mount() {
     catch(error){notice(`열 수 없습니다. ${error instanceof SyntaxError?"JSON 형식을 확인하세요.":error.message}`);}finally{event.target.value="";}
   });
   for(const name of ["map","records","operations","decisions","topics","people","references"])$("nav-"+name).addEventListener("click",()=>showView(name));
+  $("graph-overview").addEventListener("click",()=>{topicId=null;showRecords=false;renderList();});
+  $("graph-expand").addEventListener("click",()=>{if(topicId){showRecords=!showRecords;renderList();}});
   $("graph-reset").addEventListener("click",()=>graph.reset());
   $("graph-zoom-in").addEventListener("click",()=>graph.zoom(1.2));
   $("graph-zoom-out").addEventListener("click",()=>graph.zoom(1/1.2));

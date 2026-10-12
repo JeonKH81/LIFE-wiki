@@ -9,11 +9,34 @@ function graphModel(wiki, cards) {
   const edges=wiki.relations.filter(r=>visible.has(r.from)&&visible.has(r.to)).map(r=>({id:r.id,from:r.from,to:r.to,type:r.type,certainty:r.certainty,rationale:r.rationale}));
   return {nodes,edges};
 }
+// The public format uses each card title as its topic; no inferred taxonomy.
+function mapModel(wiki,cards,topicId=null,showRecords=false) {
+  const full=graphModel(wiki,cards),topic=cards.find(c=>c.id===topicId);
+  if(!topic||!showRecords)return {nodes:full.nodes.map(n=>({...n,id:"topic:"+n.id,recordId:n.id,kind:"topic"})),edges:full.edges.map(e=>({...e,from:"topic:"+e.from,to:"topic:"+e.to}))};
+  const ids=new Set([topicId]);
+  for(const e of full.edges)if(e.from===topicId||e.to===topicId){ids.add(e.from);ids.add(e.to);}
+  const focused=graphModel(wiki,cards.filter(c=>ids.has(c.id)));
+  return {nodes:focused.nodes.map(n=>({...n,recordId:n.id,kind:"record"})),edges:focused.edges};
+}
+// Selected/hovered labels get first choice; none bypass collision suppression.
+function visibleLabels(nodes,width,height,measure,selected,hovered) {
+  const occupied=[],result=[];
+  const priority=n=>n.id===selected?0:n.id===hovered?1:n.kind==="topic"?2:3;
+  for(const n of [...nodes].sort((a,b)=>priority(a)-priority(b)||b.depth-a.depth)){
+    const title=n.title.length>24?n.title.slice(0,23)+"…":n.title;
+    const labelWidth=measure(title),y=n.py+n.r+20;
+    const box={left:n.px-labelWidth/2-5,right:n.px+labelWidth/2+5,top:y-16,bottom:y+5};
+    const collision=occupied.some(o=>box.left<o.right&&box.right>o.left&&box.top<o.bottom&&box.bottom>o.top);
+    if(box.left<10||box.right>width-10||box.top<10||box.bottom>height-10||collision)continue;
+    occupied.push(box);result.push({node:n,title,y});
+  }
+  return result;
+}
 function mountGraph(canvas,onSelect) {
   if(!canvas || typeof canvas.getContext!=="function") return {update(){},reset(){},zoom(){},stop(){}};
   const ctx=canvas.getContext("2d");
   if(!ctx) return {update(){},reset(){},zoom(){},stop(){}};
-  let model={nodes:[],edges:[]},selected=null,yaw=0.35,pitch=-0.2,scale=1,drag=null,projected=[];
+  let model={nodes:[],edges:[]},selected=null,yaw=0.35,pitch=-0.2,scale=1,drag=null,projected=[],hovered=null;
   function draw() {
     const box=canvas.getBoundingClientRect(),w=Math.max(1,box.width),h=Math.max(1,box.height),dpr=Math.min(window.devicePixelRatio||1,2);
     if(canvas.width!==Math.round(w*dpr)||canvas.height!==Math.round(h*dpr)){canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);}
@@ -32,14 +55,18 @@ function mountGraph(canvas,onSelect) {
     ctx.globalAlpha=1;ctx.setLineDash([]);
     for(const n of [...projected].sort((a,b)=>a.depth-b.depth)){
       ctx.fillStyle=n.id===selected?"#ffe5ad":"#83d6ef";ctx.shadowColor=ctx.fillStyle;ctx.shadowBlur=n.id===selected?22:12;ctx.beginPath();ctx.arc(n.px,n.py,n.r,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
-      ctx.fillStyle=n.id===selected?"#fff0ce":"#d6ddef";ctx.font=`${n.id===selected?"600":"400"} 12px system-ui`;ctx.textAlign="center";
-      const title=n.title.length>24?n.title.slice(0,23)+"…":n.title;ctx.fillText(title,n.px,n.py+n.r+20,Math.max(100,w*0.4));
+    }
+    ctx.font="600 12px system-ui";ctx.textAlign="center";
+    for(const label of visibleLabels(projected,w,h,title=>ctx.measureText(title).width,selected,hovered)){
+      ctx.fillStyle=label.node.id===selected?"#fff0ce":"#d6ddef";
+      ctx.fillText(label.title,label.node.px,label.y);
     }
     if(!model.nodes.length){ctx.fillStyle="#b9c4da";ctx.textAlign="center";ctx.font="15px system-ui";ctx.fillText("표시할 기록이 없습니다. wiki.json의 기록과 검색 조건을 확인하세요.",w/2,h/2,w-40);}
   }
   canvas.addEventListener("pointerdown",e=>{drag={x:e.clientX,y:e.clientY,startX:e.clientX,startY:e.clientY,moved:false};canvas.setPointerCapture(e.pointerId);});
-  canvas.addEventListener("pointermove",e=>{if(!drag)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;drag.moved=drag.moved||Math.hypot(e.clientX-drag.startX,e.clientY-drag.startY)>5;yaw+=dx*0.008;pitch=Math.max(-1.4,Math.min(1.4,pitch+dy*0.008));drag.x=e.clientX;drag.y=e.clientY;draw();});
-  canvas.addEventListener("pointerup",e=>{if(drag&&!drag.moved){const box=canvas.getBoundingClientRect(),x=e.clientX-box.left,y=e.clientY-box.top;const found=[...projected].reverse().find(n=>Math.hypot(n.px-x,n.py-y)<n.r+12);if(found)onSelect(found.id);}drag=null;});
+  canvas.addEventListener("pointermove",e=>{if(!drag){const box=canvas.getBoundingClientRect(),x=e.clientX-box.left,y=e.clientY-box.top;const found=[...projected].sort((a,b)=>b.depth-a.depth).find(n=>Math.hypot(n.px-x,n.py-y)<n.r+12);const id=found?.id??null;if(id!==hovered){hovered=id;draw();}return;}const dx=e.clientX-drag.x,dy=e.clientY-drag.y;drag.moved=drag.moved||Math.hypot(e.clientX-drag.startX,e.clientY-drag.startY)>5;yaw+=dx*0.008;pitch=Math.max(-1.4,Math.min(1.4,pitch+dy*0.008));drag.x=e.clientX;drag.y=e.clientY;draw();});
+  canvas.addEventListener("pointerup",e=>{if(drag&&!drag.moved){const box=canvas.getBoundingClientRect(),x=e.clientX-box.left,y=e.clientY-box.top;const found=[...projected].sort((a,b)=>b.depth-a.depth).find(n=>Math.hypot(n.px-x,n.py-y)<n.r+12);if(found)onSelect(found.id);}drag=null;});
+  canvas.addEventListener("pointerleave",()=>{hovered=null;draw();});
   canvas.addEventListener("pointercancel",()=>{drag=null;});
   canvas.addEventListener("wheel",e=>{e.preventDefault();scale=Math.max(0.45,Math.min(2.4,scale*Math.exp(-e.deltaY*0.001)));draw();},{passive:false});
   canvas.addEventListener("keydown",e=>{if(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","+","-","Home"].includes(e.key)){e.preventDefault();if(e.key==="ArrowLeft")yaw-=0.12;if(e.key==="ArrowRight")yaw+=0.12;if(e.key==="ArrowUp")pitch-=0.12;if(e.key==="ArrowDown")pitch+=0.12;if(e.key==="+")scale=Math.min(2.4,scale*1.1);if(e.key==="-")scale=Math.max(0.45,scale/1.1);if(e.key==="Home"){yaw=0.35;pitch=-0.2;scale=1;}draw();}});
@@ -47,4 +74,4 @@ function mountGraph(canvas,onSelect) {
   window.addEventListener("resize",draw);
   return {update(value,id){model=value;selected=id;draw();},reset(){yaw=0.35;pitch=-0.2;scale=1;draw();},zoom(factor){scale=Math.max(0.45,Math.min(2.4,scale*factor));draw();},stop(){resize?.disconnect();window.removeEventListener("resize",draw);}};
 }
-if(typeof module!=="undefined")module.exports={graphModel,mountGraph};
+if(typeof module!=="undefined")module.exports={graphModel,mapModel,visibleLabels,mountGraph};

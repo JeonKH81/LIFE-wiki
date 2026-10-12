@@ -35,10 +35,11 @@
     </aside>
     <div class="views">
     <section id="view-map" aria-label="연결지도">
-      <div class="graph-heading"><div><span class="eyebrow">LINKED INSIGHTS FROM EMAIL</span><h1>업무와 일상의 연결 지도</h1><p>저장된 근거로 연결된 기록을 탐색합니다.</p></div><div class="graph-controls"><button id="graph-zoom-in" type="button" aria-label="지도 확대">+</button><button id="graph-zoom-out" type="button" aria-label="지도 축소">−</button><button id="graph-reset" type="button">시점 초기화</button></div></div>
-      <canvas id="graph-canvas" tabindex="0" role="img" aria-label="기록 노드와 관계 연결지도. 방향키로 회전, +와 -로 확대와 축소, Home으로 초기화. 아래 기록 버튼으로 상세 내용을 선택할 수 있습니다."></canvas>
-      <p class="graph-help">드래그로 회전 · 스크롤로 확대/축소 · 노드를 누르면 상세 기록<br>실선: 근거 확인 · 점선: 불확실한 연결 · 위치와 거리는 의미를 나타내지 않습니다.</p>
-      <details class="graph-access"><summary>전체 기록 보기 · 연결 목록</summary><div id="graph-records"></div><ul id="graph-connections"></ul></details>
+      <div class="graph-heading"><div><span class="eyebrow">LINKED INSIGHTS FROM EMAIL</span><h1>업무와 일상의 연결 지도</h1><p>주제를 선택하고 기록 펼치기를 눌러 연결된 기록을 살펴봅니다.</p></div><div class="graph-controls"><button id="graph-zoom-in" type="button" aria-label="지도 확대">+</button><button id="graph-zoom-out" type="button" aria-label="지도 축소">−</button><button id="graph-reset" type="button">시점 초기화</button></div></div>
+      <div class="graph-controls graph-mode"><button id="graph-overview" type="button">주제 탐색</button><button id="graph-expand" type="button" aria-pressed="false" disabled>기록 펼치기</button></div>
+      <canvas id="graph-canvas" tabindex="0" role="img" aria-label="주제와 관계 연결지도. 방향키로 회전, +와 -로 확대와 축소, Home으로 초기화. 아래 기록 버튼으로 상세 내용을 선택할 수 있습니다."></canvas>
+      <p class="graph-help">드래그로 회전 · 스크롤로 확대/축소 · 주제 선택 후 기록 펼치기<br>실선: 근거 확인 · 점선: 불확실한 연결 · 위치와 거리는 의미를 나타내지 않습니다.</p>
+      <details class="graph-access"><summary>주제 · 표시 중인 기록과 연결 목록</summary><div id="graph-records"></div><ul id="graph-connections"></ul></details>
       <div id="map-detail"></div>
     </section>
     <section id="view-records" aria-label="내 기록" hidden><div id="records-detail"></div></section>
